@@ -171,6 +171,5 @@ def deploy(ctx: invoke.Context):
     # push the docker image
     ctx.run(f"docker push {ctx.docker_repo}:{ctx.version}", echo=True)
 
-    ctx.run(
-        "kubectl run [NAME] --image=LOCATION-docker.pkg.dev/PROJECT-ID/REPOSITORY/IMAGE:TAG"
-    )
+    # deploy to k8s cluster
+    ctx.run(f"kubectl run primary --image={ctx.docker_repo}:{ctx.version}", echo=True)
