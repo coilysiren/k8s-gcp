@@ -14,18 +14,94 @@ provider "kubernetes" {
 # https://registry.terraform.io/providers/hashicorp/google/latest/docs/data-sources/client_config
 data "google_client_config" "default" {}
 
+# https://registry.terraform.io/providers/hashicorp/google/latest/docs/data-sources/project
+data "google_project" "project" {}
+
 # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/google_service_account
 resource "google_service_account" "gke" {
   account_id = "gke-test-1"
 }
 
 # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/google_project_iam
-resource "google_project_iam_binding" "project" {
+resource "google_project_iam_binding" "stackdriverresourceMetadatawriter" {
   project = data.google_client_config.default.project
-  role    = "roles/editor"
+  role    = "roles/stackdriver.resourceMetadata.writer"
 
   members = [
     "serviceAccount:${google_service_account.gke.email}",
+  ]
+}
+
+# https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/google_project_iam
+resource "google_project_iam_binding" "logginglogWriter" {
+  project = data.google_client_config.default.project
+  role    = "roles/logging.logWriter"
+
+  members = [
+    "serviceAccount:${google_service_account.gke.email}",
+  ]
+}
+
+# https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/google_project_iam
+resource "google_project_iam_binding" "monitoringmetricWriter" {
+  project = data.google_client_config.default.project
+  role    = "roles/monitoring.metricWriter"
+
+  members = [
+    "serviceAccount:${google_service_account.gke.email}",
+  ]
+}
+
+# https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/google_project_iam
+resource "google_project_iam_binding" "monitoringviewer" {
+  project = data.google_client_config.default.project
+  role    = "roles/monitoring.viewer"
+
+  members = [
+    "serviceAccount:${google_service_account.gke.email}",
+  ]
+}
+
+# https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/google_project_iam
+# https://mouliveera.medium.com/permissions-error-required-compute-instancegroups-update-permission-for-project-8a7f759c30c2
+resource "google_project_iam_binding" "computeinstanceAdminv1" {
+  project = data.google_client_config.default.project
+  role    = "roles/compute.instanceAdmin.v1"
+
+  members = [
+    "serviceAccount:${data.google_project.project.number}@cloudservices.gserviceaccount.com",
+  ]
+}
+
+# https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/google_project_iam
+# https://mouliveera.medium.com/permissions-error-required-compute-instancegroups-update-permission-for-project-8a7f759c30c2
+resource "google_project_iam_binding" "computenetworkUser" {
+  project = data.google_client_config.default.project
+  role    = "roles/compute.networkUser"
+
+  members = [
+    "serviceAccount:${data.google_project.project.number}@cloudservices.gserviceaccount.com",
+  ]
+}
+
+# https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/google_project_iam
+# https://mouliveera.medium.com/permissions-error-required-compute-instancegroups-update-permission-for-project-8a7f759c30c2
+resource "google_project_iam_binding" "computeimageUser" {
+  project = data.google_client_config.default.project
+  role    = "roles/compute.imageUser"
+
+  members = [
+    "serviceAccount:${data.google_project.project.number}@cloudservices.gserviceaccount.com",
+  ]
+}
+
+# https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/google_project_iam
+resource "google_project_iam_binding" "iamserviceAccountUser" {
+  project = data.google_client_config.default.project
+  role    = "roles/iam.serviceAccountUser"
+
+  members = [
+    "serviceAccount:${data.google_project.project.number}@cloudservices.gserviceaccount.com",
   ]
 }
 
@@ -68,4 +144,18 @@ module "gke" {
   subnetwork        = module.vpc.subnets_names[0]
   ip_range_pods     = "pods-range"
   ip_range_services = "services-range"
+
+  # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/container_node_pool
+  # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/container_cluster#nested_node_config
+  node_pools = [
+    {
+      name            = "primary"
+      machine_type    = "e2-micro"
+      min_count       = 1
+      max_count       = 2
+      auto_repair     = true
+      auto_upgrade    = true
+      service_account = google_service_account.gke.email
+    },
+  ]
 }
