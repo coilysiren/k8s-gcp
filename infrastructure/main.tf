@@ -22,45 +22,15 @@ resource "google_service_account" "gke" {
   account_id = "gke-test-1"
 }
 
-# https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/google_project_iam
-resource "google_project_iam_binding" "stackdriverresourceMetadatawriter" {
-  project = data.google_client_config.default.project
-  role    = "roles/stackdriver.resourceMetadata.writer"
+# # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/google_project_iam
+# resource "google_project_iam_binding" "artifactregistryreader" {
+#   project = data.google_client_config.default.project
+#   role    = "roles/artifactregistry.reader"
 
-  members = [
-    "serviceAccount:${google_service_account.gke.email}",
-  ]
-}
-
-# https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/google_project_iam
-resource "google_project_iam_binding" "logginglogWriter" {
-  project = data.google_client_config.default.project
-  role    = "roles/logging.logWriter"
-
-  members = [
-    "serviceAccount:${google_service_account.gke.email}",
-  ]
-}
-
-# https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/google_project_iam
-resource "google_project_iam_binding" "monitoringmetricWriter" {
-  project = data.google_client_config.default.project
-  role    = "roles/monitoring.metricWriter"
-
-  members = [
-    "serviceAccount:${google_service_account.gke.email}",
-  ]
-}
-
-# https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/google_project_iam
-resource "google_project_iam_binding" "monitoringviewer" {
-  project = data.google_client_config.default.project
-  role    = "roles/monitoring.viewer"
-
-  members = [
-    "serviceAccount:${google_service_account.gke.email}",
-  ]
-}
+#   members = [
+#     "serviceAccount:${google_service_account.gke.email}",
+#   ]
+# }
 
 # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/google_project_iam
 # https://mouliveera.medium.com/permissions-error-required-compute-instancegroups-update-permission-for-project-8a7f759c30c2
@@ -158,4 +128,15 @@ module "gke" {
       service_account = google_service_account.gke.email
     },
   ]
+}
+
+# https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/artifact_registry_repository
+resource "google_artifact_registry_repository" "k8s-gcp" {
+  location      = data.google_client_config.default.region
+  repository_id = "k8s-gcp"
+  format        = "DOCKER"
+
+  docker_config {
+    immutable_tags = true
+  }
 }
