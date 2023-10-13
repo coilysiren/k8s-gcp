@@ -22,15 +22,16 @@ resource "google_service_account" "gke" {
   account_id = "gke-test-1"
 }
 
-# # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/google_project_iam
-# resource "google_project_iam_binding" "artifactregistryreader" {
-#   project = data.google_client_config.default.project
-#   role    = "roles/artifactregistry.reader"
+# https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/google_project_iam
+resource "google_project_iam_binding" "gkeartifactregistryreader" {
+  project = data.google_client_config.default.project
+  role    = "roles/artifactregistry.reader"
 
-#   members = [
-#     "serviceAccount:${google_service_account.gke.email}",
-#   ]
-# }
+  members = [
+    "serviceAccount:${google_service_account.gke.email}",
+    "serviceAccount:${data.google_project.project.number}@cloudservices.gserviceaccount.com",
+  ]
+}
 
 # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/google_project_iam
 # https://mouliveera.medium.com/permissions-error-required-compute-instancegroups-update-permission-for-project-8a7f759c30c2
@@ -131,9 +132,9 @@ module "gke" {
 }
 
 # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/artifact_registry_repository
-resource "google_artifact_registry_repository" "k8s-gcp" {
+resource "google_artifact_registry_repository" "repository" {
   location      = data.google_client_config.default.region
-  repository_id = "k8s-gcp"
+  repository_id = "repository"
   format        = "DOCKER"
 
   docker_config {

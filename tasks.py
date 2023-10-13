@@ -17,7 +17,6 @@ class Context:
     repo_name: str
     version: str
     project: str
-    docker_tag: str
     docker_repo: str
     python_version: str
 
@@ -27,7 +26,6 @@ class Context:
         self.repo_name = self._repo_name()
         self.version = self._version()
         self.project = self._project()
-        self.docker_tag = self._docker_tag()
         self.docker_repo = self._docker_repo()
         self.python_version = self._python_version()
 
@@ -71,24 +69,19 @@ class Context:
             return yaml.safe_load(_file.read())
 
     def _version(self) -> str:
-        """compose a version string from git branch, git commit, user, and timestamp"""
+        """compose a version string from git branch, git commit, and user"""
         branch = self.alphanum(self.stdout("git rev-parse --abbrev-ref HEAD"))[:16]
         commit = self.alphanum(self.stdout("git rev-parse --short HEAD"))
         user = self.alphanum(self.stdout("whoami"))
-        timestamp = round(time.time())
-        return f"{branch}-{commit}-{user}-{timestamp}"
+        return f"{branch}-{commit}-{user}"
 
     def _project(self) -> str:
         """get the project id"""
         return self.stdout("gcloud config get-value project")
 
-    def _docker_tag(self) -> str:
-        """get the docker tag"""
-        return f"{self.alphanum(self.name)}-{self.version}"
-
     def _docker_repo(self) -> str:
         """get the docker repository"""
-        return f"{self.region}-docker.pkg.dev/{self.project}/{self.name}"
+        return f"{self.region}-docker.pkg.dev/{self.project}/repository/{self.name}"
 
     def _python_version(self) -> str:
         """get the python version"""
@@ -120,7 +113,7 @@ def build_docker(ctx: invoke.Context):
             f"""
             docker build
                 --build-arg PYTHON_VERSION={ctx.python_version}
-                --tag {ctx.docker_tag} .
+                --tag {ctx.name}:{ctx.version} .
             """
         ),
         echo=True,
@@ -138,7 +131,7 @@ def run_docker(ctx: invoke.Context):
 
     # run docker container
     ctx.invoke.run(
-        f"docker run -p 8001:8001 --rm {ctx.docker_tag}",
+        f"docker run -p 8001:8001 --rm {ctx.name}:{ctx.version}",
         echo=True,
         pty=True,
     )
@@ -171,9 +164,13 @@ def deploy(ctx: invoke.Context):
 
     # alias the docker tag
     ctx.run(
-        f"docker tag docker.io/library/{ctx.docker_tag} {ctx.docker_repo}/{ctx.docker_tag}",
+        f"docker tag docker.io/library/{ctx.name}:{ctx.version} {ctx.docker_repo}:{ctx.version}",
         echo=True,
     )
 
     # push the docker image
-    ctx.run(f"docker push {ctx.docker_repo}/{ctx.docker_tag}", echo=True)
+    ctx.run(f"docker push {ctx.docker_repo}:{ctx.version}", echo=True)
+
+    ctx.run(
+        "kubectl run [NAME] --image=LOCATION-docker.pkg.dev/PROJECT-ID/REPOSITORY/IMAGE:TAG"
+    )
