@@ -51,7 +51,7 @@ The majority of our tests were written in this way.
 ```bash
 # first terminal
 $ source ./venv/bin/activate
-$ invoke serve
+$ invoke flask
 ```
 
 ```bash
@@ -65,7 +65,7 @@ $ http :8080/api/healthcheck
 ```bash
 # first terminal
 $ source ./venv/bin/activate
-$ invoke serve
+$ invoke flask
 ```
 
 ```bash

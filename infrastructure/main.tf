@@ -131,7 +131,7 @@ module "gke" {
       name            = "primary"
       machine_type    = "e2-micro"
       min_count       = 1
-      max_count       = 2
+      max_count       = 1
       auto_repair     = true
       auto_upgrade    = true
       service_account = google_service_account.gke.email
