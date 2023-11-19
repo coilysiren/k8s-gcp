@@ -93,11 +93,8 @@ def build(ctx: [invoke.Context, Context]):
     # get local configurations
     ctx = Context(ctx)
 
-    # generate requirements.txt
-    ctx.run("pipenv requirements > requirements.txt")
-
     # build docker image
-    ctx.run(f"docker build --tag {ctx.name}:{ctx.version} . --target base", pty=True)
+    ctx.run(f"BUILDKIT_PROGRESS=plain docker build --tag {ctx.name}:{ctx.version} . --target base", pty=True)
 
 
 @invoke.task
@@ -141,28 +138,28 @@ def deploy(ctx: [invoke.Context, Context]):
 @invoke.task
 def serve(ctx: [invoke.Context, Context]):
     """serve up the application, so that it can be accessed locally"""
-    ctx.run("docker compose up --build flask", pty=True)
+    ctx.run("BUILDKIT_PROGRESS=plain docker compose up --build flask", pty=True)
 
 
 @invoke.task
 def test(ctx: [invoke.Context, Context]):
     """run tests"""
-    ctx.run("docker compose run --build pytest", pty=True)
+    ctx.run("BUILDKIT_PROGRESS=plain docker compose run --build pytest", pty=True)
 
 
 @invoke.task
 def test_watch(ctx: [invoke.Context, Context]):
     """run tests in watch mode"""
-    ctx.run("docker compose run --build ptw", pty=True)
+    ctx.run("BUILDKIT_PROGRESS=plain docker compose run --build ptw", pty=True)
 
 
 @invoke.task
 def migration_create(ctx: [invoke.Context, Context]):
     """create a new database migration"""
-    ctx.run("docker compose run --build create-migration", pty=True)
+    ctx.run("BUILDKIT_PROGRESS=plain docker compose run --build create-migration", pty=True)
 
 
 @invoke.task
 def migration_run_locally(ctx: [invoke.Context, Context]):
     """run a local database migration"""
-    ctx.run("docker compose run --build run-local-migration", pty=True)
+    ctx.run("BUILDKIT_PROGRESS=plain docker compose run --build run-local-migration", pty=True)

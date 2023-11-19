@@ -1,17 +1,19 @@
-name: Docker Image CI
+name: CI/CD
 
 on:
   push:
-    branches: ["main"]
+    branches:
+      - main
   pull_request:
-    branches: ["main"]
+    branches:
+      - main
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    container:
-      image: python:3.11
     steps:
       - uses: actions/checkout@v3
-      - run: pip install invoke
+      - run: make pyenv-ubuntu
+      - run: echo "$HOME/.pyenv/bin:$PATH" >> $GITHUB_PATH
+      - run: make install
       - run: invoke test
