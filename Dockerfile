@@ -5,7 +5,6 @@ EXPOSE 8080
 RUN mkdir -p /usr/app/src
 WORKDIR /usr/app
 COPY ./src /usr/app/src
-COPY ./__init__.py /usr/app/__init__.py
 
 RUN pip install -r src/requirements.txt
 CMD ["env", "PYTHONPATH=.", "gunicorn", "--bind=0.0.0.0:8080", "src.main.cli:app"]
