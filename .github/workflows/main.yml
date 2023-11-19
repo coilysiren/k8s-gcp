@@ -1,5 +1,4 @@
-name: Docker Image CI
-
+name: Github Actions
 on:
   push:
     branches: ["main"]
@@ -8,10 +7,10 @@ on:
 
 jobs:
   test:
+    using: docker
+    image: Dockerfile
     runs-on: ubuntu-latest
-    container:
-      image: python:3.11
     steps:
       - uses: actions/checkout@v3
-      - run: pip install invoke pyyaml
+      - run: make install
       - run: invoke test

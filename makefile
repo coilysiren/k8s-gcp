@@ -12,6 +12,7 @@ endif
 install: ## install python, and python packages
 	$(MAKE) python
 	pyenv install --skip-existing
+	pip install invoke pyyaml
 	python -m venv venv
 	./venv/bin/pip install --upgrade pip pipenv
 	./venv/bin/pip install -r src/requirements-dev.txt
