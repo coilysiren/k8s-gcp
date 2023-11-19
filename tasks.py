@@ -15,7 +15,6 @@ class Context:
     config: dict
     repo_name: str
     version: str
-    project: str
     docker_repo: str
     python_version: str
 
@@ -24,7 +23,6 @@ class Context:
         self.config = self._config()
         self.repo_name = self._repo_name()
         self.version = self._version()
-        self.project = self._project()
         self.docker_repo = self._docker_repo()
         self.python_version = self._python_version()
 
@@ -58,6 +56,11 @@ class Context:
         """get the region"""
         return self.config["region"]
 
+    @property
+    def project(self) -> str:
+        """get the project id"""
+        return self.config["project"]
+
     def _repo_name(self) -> str:
         """get the name of the repository"""
         return self.stdout("basename -s .git `git config --get remote.origin.url`")
@@ -73,10 +76,6 @@ class Context:
         commit = self.alphanum(self.stdout("git rev-parse --short HEAD"))
         user = self.alphanum(self.stdout("whoami"))
         return f"{branch}-{commit}-{user}"
-
-    def _project(self) -> str:
-        """get the project id"""
-        return self.stdout("gcloud config get-value project")
 
     def _docker_repo(self) -> str:
         """get the docker repository"""
@@ -109,6 +108,9 @@ def deploy(ctx: [invoke.Context, Context]):
     # deploy and infrastructure changes
     ctx.run("cd infrastructure && terraform apply", echo=True)
 
+    # set the project
+    ctx.run(f"gcloud config set project {ctx.project}", echo=True)
+
     # authenticate with gcloud for docker registry
     ctx.run(
         ctx.compress(
@@ -122,6 +124,9 @@ def deploy(ctx: [invoke.Context, Context]):
         echo=True,
     )
 
+    # authenticate with gcloud for kubernetes
+    ctx.run(f"gcloud container clusters get-credentials {ctx.name} --region={ctx.region}", echo=True)
+
     # alias the docker tag
     ctx.run(
         f"docker tag docker.io/library/{ctx.name}:{ctx.version} {ctx.docker_repo}:{ctx.version}",
@@ -132,7 +137,14 @@ def deploy(ctx: [invoke.Context, Context]):
     ctx.run(f"docker push {ctx.docker_repo}:{ctx.version}", echo=True)
 
     # deploy to k8s cluster
-    ctx.run(f"kubectl run primary --image={ctx.docker_repo}:{ctx.version}", echo=True)
+    ctx.run(
+        f"kubectl create deployment web-server --image={ctx.docker_repo}:{ctx.version}  --port=8080",
+        echo=True,
+        warn=True,
+    )
+    ctx.run(
+        "kubectl expose deployment web-server --type=LoadBalancer --port=80 --target-port=8080", echo=True, warn=True
+    )
 
 
 @invoke.task

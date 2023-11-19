@@ -1,9 +1,13 @@
+locals {
+  name = yamldecode(file("../config.yml")).name
+}
+
 # https://registry.terraform.io/providers/hashicorp/google/latest/docs/data-sources/client_config
 data "google_client_config" "default" {}
 
 # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/google_service_account
 resource "google_service_account" "gke" {
-  account_id = "gke-test-1"
+  account_id = local.name
 }
 
 # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/google_project_iam
@@ -64,17 +68,17 @@ resource "google_project_iam_binding" "iamserviceAccountUser" {
 module "vpc" {
   source       = "terraform-google-modules/network/google"
   project_id   = data.google_client_config.default.project
-  network_name = "primary"
+  network_name = local.name
 
   subnets = [
     {
-      subnet_name           = "primary"
+      subnet_name           = "${local.name}-primary"
       subnet_private_access = "true"
       subnet_ip             = "10.0.0.0/20"
       subnet_region         = data.google_client_config.default.region
     },
     {
-      subnet_name           = "secondary"
+      subnet_name           = "${local.name}-secondary"
       subnet_private_access = "true"
       subnet_ip             = "10.0.16.0/20"
       subnet_region         = data.google_client_config.default.region
@@ -82,7 +86,7 @@ module "vpc" {
   ]
 
   secondary_ranges = {
-    primary = [
+    "${local.name}-primary" = [
       {
         range_name    = "pods-range"
         ip_cidr_range = "10.0.32.0/20"
@@ -92,7 +96,7 @@ module "vpc" {
         ip_cidr_range = "10.0.48.0/20"
       },
     ],
-    secondary = [
+    "${local.name}-secondary" = [
       {
         range_name    = "pods-range"
         ip_cidr_range = "10.0.64.0/20"
@@ -107,7 +111,7 @@ module "vpc" {
 
 # https://registry.terraform.io/modules/terraform-google-modules/kubernetes-engine/google/latest
 module "gke" {
-  name                      = "gke-test-0"
+  name                      = local.name
   source                    = "terraform-google-modules/kubernetes-engine/google"
   project_id                = data.google_client_config.default.project
   region                    = data.google_client_config.default.region
@@ -117,6 +121,7 @@ module "gke" {
   remove_default_node_pool  = true
   deletion_protection       = false
   default_max_pods_per_node = 16
+  initial_node_count        = 1
   ip_range_pods             = "pods-range"
   ip_range_services         = "services-range"
   # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/container_node_pool
@@ -132,6 +137,15 @@ module "gke" {
       service_account = google_service_account.gke.email
     },
   ]
+  # https://registry.terraform.io/modules/terraform-google-modules/kubernetes-engine/google/latest
+  # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/container_cluster#oauth_scopes
+  node_pools_oauth_scopes = {
+    all = [
+      "https://www.googleapis.com/auth/cloud-platform",
+      "https://www.googleapis.com/auth/logging.write",
+      "https://www.googleapis.com/auth/monitoring",
+    ]
+  }
 }
 
 # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/artifact_registry_repository
@@ -143,4 +157,11 @@ resource "google_artifact_registry_repository" "repository" {
   docker_config {
     immutable_tags = true
   }
+}
+
+# https://registry.terraform.io/providers/hashicorp/kubernetes/latest/docs
+provider "kubernetes" {
+  host                   = "https://${module.gke.endpoint}"
+  token                  = data.google_client_config.default.access_token
+  cluster_ca_certificate = base64decode(module.gke.ca_certificate)
 }

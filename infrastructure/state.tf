@@ -7,8 +7,8 @@ terraform {
 
 # https://registry.terraform.io/providers/hashicorp/google/latest/docs
 provider "google" {
-  project = "root-territory-384205"
-  region  = "us-central1"
+  project = yamldecode(file("../config.yml")).project
+  region  = yamldecode(file("../config.yml")).region
 }
 
 # https://registry.terraform.io/providers/hashicorp/google/latest/docs/data-sources/project
@@ -21,7 +21,7 @@ data "google_project" "default" {}
 # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/storage_bucket
 resource "google_storage_bucket" "default" {
   name          = "coilysiren-k8s-gpc-tfstate-0"
-  location      = "US-CENTRAL1"
+  location      = "US"
   force_destroy = true
   project       = data.google_project.default.project_id
 }
