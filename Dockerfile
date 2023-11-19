@@ -1,14 +1,18 @@
-ARG PYTHON_VERSION
-FROM python:${PYTHON_VERSION}-slim-buster
+FROM python:3.11 as base
+
+EXPOSE 8080
+
+WORKDIR /usr/app
+COPY ./src/* /usr/app
 
 ENV PYTHONUNBUFFERED 1
-EXPOSE 8001
+ENV PYTHONPATH "$(pwd):$PYTHONPATH"
 
-WORKDIR /project
-COPY ./src /project/src
-COPY ./requirements.txt /project/requirements.txt
-COPY ./config.yml /project/config.yml
-
+EXPOSE 8080
 RUN pip install -r requirements.txt
+CMD "gunicorn --bind 0.0.0.0:8080 app:app"
 
-CMD ["gunicorn", "--bind", "0.0.0.0:8001", "src.main:app"]
+FROM base AS dev
+
+RUN pip install -r requirements-dev.txt
+CMD "pytest"

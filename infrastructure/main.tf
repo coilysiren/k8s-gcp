@@ -1,22 +1,3 @@
-# https://registry.terraform.io/providers/hashicorp/google/latest/docs
-provider "google" {
-  region = "us-west1"
-  zone   = "us-west1-c"
-}
-
-# https://registry.terraform.io/providers/hashicorp/kubernetes/latest/docs
-provider "kubernetes" {
-  host                   = "https://${module.gke.endpoint}"
-  token                  = data.google_client_config.default.access_token
-  cluster_ca_certificate = base64decode(module.gke.ca_certificate)
-}
-
-# https://registry.terraform.io/providers/hashicorp/google/latest/docs/data-sources/client_config
-data "google_client_config" "default" {}
-
-# https://registry.terraform.io/providers/hashicorp/google/latest/docs/data-sources/project
-data "google_project" "project" {}
-
 # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/google_service_account
 resource "google_service_account" "gke" {
   account_id = "gke-test-1"
@@ -29,7 +10,7 @@ resource "google_project_iam_binding" "gkeartifactregistryreader" {
 
   members = [
     "serviceAccount:${google_service_account.gke.email}",
-    "serviceAccount:${data.google_project.project.number}@cloudservices.gserviceaccount.com",
+    "serviceAccount:${data.google_project.default.number}@cloudservices.gserviceaccount.com",
   ]
 }
 
@@ -40,7 +21,7 @@ resource "google_project_iam_binding" "computeinstanceAdminv1" {
   role    = "roles/compute.instanceAdmin.v1"
 
   members = [
-    "serviceAccount:${data.google_project.project.number}@cloudservices.gserviceaccount.com",
+    "serviceAccount:${data.google_project.default.number}@cloudservices.gserviceaccount.com",
   ]
 }
 
@@ -51,7 +32,7 @@ resource "google_project_iam_binding" "computenetworkUser" {
   role    = "roles/compute.networkUser"
 
   members = [
-    "serviceAccount:${data.google_project.project.number}@cloudservices.gserviceaccount.com",
+    "serviceAccount:${data.google_project.default.number}@cloudservices.gserviceaccount.com",
   ]
 }
 
@@ -62,7 +43,7 @@ resource "google_project_iam_binding" "computeimageUser" {
   role    = "roles/compute.imageUser"
 
   members = [
-    "serviceAccount:${data.google_project.project.number}@cloudservices.gserviceaccount.com",
+    "serviceAccount:${data.google_project.default.number}@cloudservices.gserviceaccount.com",
   ]
 }
 
@@ -72,7 +53,7 @@ resource "google_project_iam_binding" "iamserviceAccountUser" {
   role    = "roles/iam.serviceAccountUser"
 
   members = [
-    "serviceAccount:${data.google_project.project.number}@cloudservices.gserviceaccount.com",
+    "serviceAccount:${data.google_project.default.number}@cloudservices.gserviceaccount.com",
   ]
 }
 
@@ -84,38 +65,57 @@ module "vpc" {
 
   subnets = [
     {
-      subnet_name   = "primary"
-      subnet_ip     = "10.0.0.0/24"
-      subnet_region = data.google_client_config.default.region
+      subnet_name           = "primary"
+      subnet_private_access = "true"
+      subnet_ip             = "10.0.0.0/20"
+      subnet_region         = data.google_client_config.default.region
+    },
+    {
+      subnet_name           = "secondary"
+      subnet_private_access = "true"
+      subnet_ip             = "10.0.16.0/20"
+      subnet_region         = data.google_client_config.default.region
     },
   ]
 
   secondary_ranges = {
-    ("primary") = [
+    primary = [
       {
         range_name    = "pods-range"
-        ip_cidr_range = "10.0.1.0/24"
+        ip_cidr_range = "10.0.32.0/20"
       },
       {
         range_name    = "services-range"
-        ip_cidr_range = "10.0.2.0/24"
+        ip_cidr_range = "10.0.48.0/20"
       },
-    ]
+    ],
+    secondary = [
+      {
+        range_name    = "pods-range"
+        ip_cidr_range = "10.0.64.0/20"
+      },
+      {
+        range_name    = "services-range"
+        ip_cidr_range = "10.0.80.0/20"
+      },
+    ],
   }
 }
 
 # https://registry.terraform.io/modules/terraform-google-modules/kubernetes-engine/google/latest
 module "gke" {
-  name              = "gke-test-1"
-  source            = "terraform-google-modules/kubernetes-engine/google"
-  project_id        = data.google_client_config.default.project
-  region            = data.google_client_config.default.region
-  zones             = ["${data.google_client_config.default.region}-a"]
-  network           = module.vpc.network_name
-  subnetwork        = module.vpc.subnets_names[0]
-  ip_range_pods     = "pods-range"
-  ip_range_services = "services-range"
-
+  name                      = "gke-test-0"
+  source                    = "terraform-google-modules/kubernetes-engine/google"
+  project_id                = data.google_client_config.default.project
+  region                    = data.google_client_config.default.region
+  network                   = module.vpc.network_name
+  subnetwork                = module.vpc.subnets_names[0]
+  zones                     = ["${data.google_client_config.default.region}-a"] # default is every zone, we only want one for $$$ reasons
+  remove_default_node_pool  = true
+  deletion_protection       = false
+  default_max_pods_per_node = 16
+  ip_range_pods             = "pods-range"
+  ip_range_services         = "services-range"
   # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/container_node_pool
   # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/container_cluster#nested_node_config
   node_pools = [

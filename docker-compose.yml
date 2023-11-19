@@ -1,0 +1,52 @@
+version: '3.8'
+
+x-app: &app
+  build:
+    context: .
+    target: dev
+  volumes:
+    - ./app:/usr/app
+    - ./coverage_report:/usr/app/coverage_report
+    - ./.coveragerc:/usr/app/.coveragerc
+  ports:
+    - '8080:8080'
+  environment:
+    POSTGRES_DB: postgres
+    POSTGRES_USER: postgres
+    POSTGRES_PASSWORD: postgres
+  depends_on:
+    - postgres
+
+services:
+
+  postgres:
+    image: postgres:16
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+
+  gunicorn:
+    <<: *app
+
+  flask:
+    command: flask --app app:app run --debug --host 0.0.0.0 --port 8080
+    <<: *app
+
+  pytest:
+    command: pytest -sra --cov --cov-report=html:coverage_report --cov-report=term-missing --cov-fail-under=100 --cov-config=.coveragerc
+    <<: *app
+
+  ptw:
+    command: ptw --wait -- -sra --cov --cov-report=html:coverage_report --cov-report=term-missing --cov-fail-under=100 --cov-config=.coveragerc
+    <<: *app
+
+  create-migration:
+    command: flask db migrate
+    <<: *app
+
+  run-local-migration:
+    command: flask db upgrade
+    <<: *app

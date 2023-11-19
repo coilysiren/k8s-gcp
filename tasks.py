@@ -13,7 +13,6 @@ class Context:
 
     invoke: invoke.Context
     config: dict
-    region: str
     repo_name: str
     version: str
     project: str
@@ -51,7 +50,7 @@ class Context:
 
     @property
     def name(self) -> str:
-        """get the region"""
+        """get the name"""
         return self.config["name"]
 
     @property
@@ -85,66 +84,30 @@ class Context:
 
     def _python_version(self) -> str:
         """get the python version"""
-        return self.stdout("grep python_version Pipfile").split('"')[1]
+        return self.stdout("cat .python-version")
 
 
 @invoke.task
-def run_native(ctx: invoke.Context):
-    """run the application natively"""
-    ctx = Context(ctx)
-    ctx.run(
-        "pipenv run flask --app src/main.py --debug run --host 0.0.0.0 --port 8001",
-        echo=True,
-    )
-
-
-@invoke.task
-def build_docker(ctx: invoke.Context):
+def build(ctx: [invoke.Context, Context]):
     """run the application in a docker container"""
     # get local configurations
     ctx = Context(ctx)
 
     # generate requirements.txt
-    ctx.run("pipenv requirements > requirements.txt", echo=True)
+    ctx.run("pipenv requirements > requirements.txt")
 
     # build docker image
-    ctx.run(
-        ctx.compress(
-            f"""
-            docker build
-                --build-arg PYTHON_VERSION={ctx.python_version}
-                --tag {ctx.name}:{ctx.version} .
-            """
-        ),
-        echo=True,
-        pty=True,
-    )
+    ctx.run(f"docker build --tag {ctx.name}:{ctx.version} . --target base", pty=True)
 
 
 @invoke.task
-def run_docker(ctx: invoke.Context):
-    # get local configurations
-    ctx = Context(ctx)
-
-    # build docker before running
-    build_docker(ctx.invoke)
-
-    # run docker container
-    ctx.invoke.run(
-        f"docker run -p 8001:8001 --rm {ctx.name}:{ctx.version}",
-        echo=True,
-        pty=True,
-    )
-
-
-@invoke.task
-def deploy(ctx: invoke.Context):
+def deploy(ctx: [invoke.Context, Context]):
     """deploy the application to a kubernetes cluster"""
     # get local configurations
     ctx = Context(ctx)
 
     # build docker, get the tag
-    build_docker(ctx.invoke)
+    build(ctx.invoke)
 
     # deploy and infrastructure changes
     ctx.run("cd infrastructure && terraform apply", echo=True)
@@ -173,3 +136,33 @@ def deploy(ctx: invoke.Context):
 
     # deploy to k8s cluster
     ctx.run(f"kubectl run primary --image={ctx.docker_repo}:{ctx.version}", echo=True)
+
+
+@invoke.task
+def serve(ctx: [invoke.Context, Context]):
+    """serve up the application, so that it can be accessed locally"""
+    ctx.run("docker compose up --build flask", pty=True)
+
+
+@invoke.task
+def test(ctx: [invoke.Context, Context]):
+    """run tests"""
+    ctx.run("docker compose run --build pytest", pty=True)
+
+
+@invoke.task
+def test_watch(ctx: [invoke.Context, Context]):
+    """run tests in watch mode"""
+    ctx.run("docker compose run --build ptw", pty=True)
+
+
+@invoke.task
+def migration_create(ctx: [invoke.Context, Context]):
+    """create a new database migration"""
+    ctx.run("docker compose run --build create-migration", pty=True)
+
+
+@invoke.task
+def migration_run_locally(ctx: [invoke.Context, Context]):
+    """run a local database migration"""
+    ctx.run("docker compose run --build run-local-migration", pty=True)
