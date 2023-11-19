@@ -76,11 +76,12 @@ $ curl http://0.0.0.0:8080/api/healthcheck
 
 ### Updating Dependencies
 
-You can update dependencies via
+You can update dependencies via the following commands:
 
 ```bash
-pipenv install < some package >
-make install upgrade install
+$ source ./venv/bin/activate
+$ pipenv install < some package >
+$ make upgrade
 ```
 
 ## Deployment
