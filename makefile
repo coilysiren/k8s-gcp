@@ -9,8 +9,10 @@ pyenv-ubuntu: ## install pyenv on ubuntu
 		liblzma-dev
 	curl https://pyenv.run | bash
 	echo 'export PATH="$HOME/.pyenv/bin:$PATH"' >> ~/.bashrc
+	echo $(PATH)
 
 install: ## install python, and python packages
+	echo $(PATH)
 	pyenv install --skip-existing
 	pip install invoke pyyaml
 	python -m venv venv
