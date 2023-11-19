@@ -14,6 +14,6 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - run: make pyenv-ubuntu
-      - run: echo "$GITHUB_WORKSPACE/.pyenv/bin:$PATH" >> $GITHUB_PATH
+      - run: echo "$HOME/.pyenv/bin:$PATH" >> $GITHUB_PATH
       - run: make install
       - run: invoke test
