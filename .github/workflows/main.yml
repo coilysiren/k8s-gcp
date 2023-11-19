@@ -13,5 +13,5 @@ jobs:
       image: python:3.11
     steps:
       - uses: actions/checkout@v3
-      - run: pip install invoke
+      - run: pip install invoke yaml
       - run: invoke test
