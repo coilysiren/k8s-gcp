@@ -133,8 +133,9 @@ def deploy(ctx: [invoke.Context, Context]):
     ctx.run(f"docker push {ctx.docker_repo}:{ctx.version}")
 
     # deploy to k8s cluster
-    ctx.run(f"kubectl create deployment web-server --image={ctx.docker_repo}:{ctx.version}  --port=8080", warn=True)
-    ctx.run("kubectl expose deployment web-server --type=LoadBalancer --port=80 --target-port=8080", warn=True)
+    ctx.run(f"kubectl create deployment {ctx.name} --image={ctx.docker_repo}:{ctx.version}  --port=8080", warn=True)
+    ctx.run(f"kubectl set image deployment/{ctx.name} {ctx.name}={ctx.docker_repo}:{ctx.version}")
+    ctx.run(f"kubectl expose deployment {ctx.name} --type=LoadBalancer --port=80 --target-port=8080", warn=True)
 
 
 @invoke.task
