@@ -6,14 +6,23 @@ name = "pypi"
 [packages]
 flask = "*"
 gunicorn = "*"
+pymemcache = "*"
+flask-migrate = "*"
+flask-sqlalchemy = "*"
+pytest-cov = "*"
 
 [dev-packages]
 invoke = "*"
+pytest = "*"
+pytest-watch = "*"
 pylint = "*"
 flake8 = "*"
 mypy = "*"
 pyyaml = "*"
 types-pyyaml = "*"
+types-Flask-Migrate = "*"
+coverage = "*"
+pytest-flask = "*"
 
 [requires]
-python_version = "3.11"
+python_version = "3.11.6"

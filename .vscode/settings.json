@@ -1,0 +1,3 @@
+{
+  "pylint.args": ["--rcfile=pyproject.toml"]
+}
