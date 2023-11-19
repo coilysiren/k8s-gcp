@@ -1,7 +1,7 @@
 help: ## Show this help.
 	@egrep '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
-ifdef GITHUB_ACTION
+ifdef CI
 python: # python should already be installed in CI
 	python --version
 else
@@ -11,7 +11,6 @@ endif
 
 install: ## install python, and python packages
 	$(MAKE) python
-	pyenv install --skip-existing
 	pip install invoke pyyaml
 	python -m venv venv
 	./venv/bin/pip install --upgrade pip pipenv
