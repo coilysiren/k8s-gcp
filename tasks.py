@@ -15,7 +15,6 @@ class Context:
     config: dict
     repo_name: str
     version: str
-    project: str
     docker_repo: str
     python_version: str
 
@@ -24,13 +23,12 @@ class Context:
         self.config = self._config()
         self.repo_name = self._repo_name()
         self.version = self._version()
-        self.project = self._project()
         self.docker_repo = self._docker_repo()
         self.python_version = self._python_version()
 
-    def run(self, *args, **kwargs):
+    def run(self, *args, echo=True, pty=True, **kwargs):
         """run a command"""
-        return self.invoke.run(*args, **kwargs)
+        return self.invoke.run(*args, echo=echo, pty=pty, **kwargs)
 
     def compress(self, command: str) -> str:
         """compress whitespace in string"""
@@ -58,6 +56,11 @@ class Context:
         """get the region"""
         return self.config["region"]
 
+    @property
+    def project(self) -> str:
+        """get the project id"""
+        return self.config["project"]
+
     def _repo_name(self) -> str:
         """get the name of the repository"""
         return self.stdout("basename -s .git `git config --get remote.origin.url`")
@@ -73,10 +76,6 @@ class Context:
         commit = self.alphanum(self.stdout("git rev-parse --short HEAD"))
         user = self.alphanum(self.stdout("whoami"))
         return f"{branch}-{commit}-{user}"
-
-    def _project(self) -> str:
-        """get the project id"""
-        return self.stdout("gcloud config get-value project")
 
     def _docker_repo(self) -> str:
         """get the docker repository"""
@@ -94,7 +93,7 @@ def build(ctx: [invoke.Context, Context]):
     ctx = Context(ctx)
 
     # build docker image
-    ctx.run(f"BUILDKIT_PROGRESS=plain docker build --tag {ctx.name}:{ctx.version} . --target base", pty=True)
+    ctx.run(f"BUILDKIT_PROGRESS=plain docker build --tag {ctx.name}:{ctx.version} . --target base")
 
 
 @invoke.task
@@ -107,7 +106,10 @@ def deploy(ctx: [invoke.Context, Context]):
     build(ctx.invoke)
 
     # deploy and infrastructure changes
-    ctx.run("cd infrastructure && terraform apply", echo=True)
+    ctx.run("cd infrastructure && terraform apply")
+
+    # set the project
+    ctx.run(f"gcloud config set project {ctx.project}")
 
     # authenticate with gcloud for docker registry
     ctx.run(
@@ -119,47 +121,54 @@ def deploy(ctx: [invoke.Context, Context]):
                         --password-stdin https://{ctx.region}-docker.pkg.dev
             """
         ),
-        echo=True,
     )
+
+    # authenticate with gcloud for kubernetes
+    ctx.run(f"gcloud container clusters get-credentials {ctx.name} --region={ctx.region}")
 
     # alias the docker tag
-    ctx.run(
-        f"docker tag docker.io/library/{ctx.name}:{ctx.version} {ctx.docker_repo}:{ctx.version}",
-        echo=True,
-    )
+    ctx.run(f"docker tag docker.io/library/{ctx.name}:{ctx.version} {ctx.docker_repo}:{ctx.version}")
 
     # push the docker image
-    ctx.run(f"docker push {ctx.docker_repo}:{ctx.version}", echo=True)
+    ctx.run(f"docker push {ctx.docker_repo}:{ctx.version}")
 
     # deploy to k8s cluster
-    ctx.run(f"kubectl run primary --image={ctx.docker_repo}:{ctx.version}", echo=True)
+    ctx.run(f"kubectl create deployment {ctx.name} --image={ctx.docker_repo}:{ctx.version}  --port=8080", warn=True)
+    ctx.run(f"kubectl set image deployment/{ctx.name} {ctx.name}={ctx.docker_repo}:{ctx.version}")
+    ctx.run(f"kubectl expose deployment {ctx.name} --type=LoadBalancer --port=80 --target-port=8080", warn=True)
 
 
 @invoke.task
-def serve(ctx: [invoke.Context, Context]):
+def flask(ctx: [invoke.Context, Context]):
     """serve up the application, so that it can be accessed locally"""
-    ctx.run("BUILDKIT_PROGRESS=plain docker compose up --build flask", pty=True)
+    ctx.run("BUILDKIT_PROGRESS=plain docker compose up --build flask")
+
+
+@invoke.task
+def gunicorn(ctx: [invoke.Context, Context]):
+    """serve up the application, so that it can be accessed locally"""
+    ctx.run("BUILDKIT_PROGRESS=plain docker compose up --build gunicorn")
 
 
 @invoke.task
 def test(ctx: [invoke.Context, Context]):
     """run tests"""
-    ctx.run("BUILDKIT_PROGRESS=plain docker compose run --build pytest", pty=True)
+    ctx.run("BUILDKIT_PROGRESS=plain docker compose run --build pytest")
 
 
 @invoke.task
 def test_watch(ctx: [invoke.Context, Context]):
     """run tests in watch mode"""
-    ctx.run("BUILDKIT_PROGRESS=plain docker compose run --build ptw", pty=True)
+    ctx.run("BUILDKIT_PROGRESS=plain docker compose run --build ptw")
 
 
 @invoke.task
 def migration_create(ctx: [invoke.Context, Context]):
     """create a new database migration"""
-    ctx.run("BUILDKIT_PROGRESS=plain docker compose run --build create-migration", pty=True)
+    ctx.run("BUILDKIT_PROGRESS=plain docker compose run --build create-migration")
 
 
 @invoke.task
 def migration_run_locally(ctx: [invoke.Context, Context]):
     """run a local database migration"""
-    ctx.run("BUILDKIT_PROGRESS=plain docker compose run --build run-local-migration", pty=True)
+    ctx.run("BUILDKIT_PROGRESS=plain docker compose run --build run-local-migration")

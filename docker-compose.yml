@@ -28,9 +28,11 @@ services:
 
   gunicorn:
     <<: *app
+    build:
+      context: .
+      target: base
 
   flask:
-    command: flask --app app:app run --debug --host 0.0.0.0 --port 8080
     <<: *app
 
   pytest:
