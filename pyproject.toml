@@ -1,0 +1,13 @@
+[tool.pylint.main]
+fail-under = 100
+suggestion-mode = true
+
+[tool.pylint.messages-control]
+disable = [
+  "missing-module-docstring",
+  "missing-function-docstring",
+  "missing-class-docstring",
+  "broad-exception-raised",
+  "broad-exception-caught",
+]
+max-line-length = 100

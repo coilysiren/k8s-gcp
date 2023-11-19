@@ -1,4 +1,10 @@
 .terraform
+.mypy_cache
+.coveragerc
+.coverage
+
+coverage_report
 terraform.tfstate
 terraform.tfstate.backup
 venv
+__pycache__

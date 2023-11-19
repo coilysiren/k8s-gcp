@@ -2,11 +2,9 @@ FROM python:3.11 as base
 
 EXPOSE 8080
 
-WORKDIR /usr/app
-COPY ./src/* /usr/app
-
-ENV PYTHONUNBUFFERED 1
-ENV PYTHONPATH "$(pwd):$PYTHONPATH"
+RUN mkdir -p /usr/app/src
+WORKDIR /usr/app/src
+COPY ./src /usr/app/src
 
 EXPOSE 8080
 RUN pip install -r requirements.txt

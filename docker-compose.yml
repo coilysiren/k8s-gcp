@@ -5,9 +5,7 @@ x-app: &app
     context: .
     target: dev
   volumes:
-    - ./app:/usr/app
-    - ./coverage_report:/usr/app/coverage_report
-    - ./.coveragerc:/usr/app/.coveragerc
+    - ./src:/usr/app/src
   ports:
     - '8080:8080'
   environment:
