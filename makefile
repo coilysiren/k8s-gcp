@@ -8,6 +8,9 @@ pyenv-ubuntu: ## install pyenv on ubuntu
 		libncurses5-dev libncursesw5-dev xz-utils tk-dev libffi-dev \
 		liblzma-dev
 	curl https://pyenv.run | bash
+	echo 'export PATH="$HOME/.pyenv/bin:$PATH"' >> ~/.bashrc
+	source ~/.bashrc
+	pyenv --version
 
 install: ## install python, and python packages
 	pyenv install --skip-existing
