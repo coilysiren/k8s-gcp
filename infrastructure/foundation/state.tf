@@ -7,8 +7,8 @@ terraform {
 
 # https://registry.terraform.io/providers/hashicorp/google/latest/docs
 provider "google" {
-  project = yamldecode(file("../config.yml")).project
-  region  = yamldecode(file("../config.yml")).region
+  project = yamldecode(file("../../config.yml")).project
+  region  = yamldecode(file("../../config.yml")).region
 }
 
 # https://registry.terraform.io/providers/hashicorp/google/latest/docs/data-sources/project

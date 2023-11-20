@@ -121,7 +121,8 @@ def deploy(ctx: [invoke.Context, Context]):
     build(ctx.invoke)
 
     # deploy and infrastructure changes
-    ctx.run("cd infrastructure && terraform apply")
+    ctx.run("cd infrastructure/foundation && terraform init")
+    ctx.run("cd infrastructure/foundation && terraform apply")
 
     # set the project
     ctx.run(f"gcloud config set project {ctx.project}")

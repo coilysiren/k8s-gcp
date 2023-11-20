@@ -1,5 +1,5 @@
 locals {
-  name = yamldecode(file("../config.yml")).name
+  name = yamldecode(file("../../config.yml")).name
 }
 
 # https://registry.terraform.io/providers/hashicorp/google/latest/docs/data-sources/client_config
@@ -148,13 +148,6 @@ module "gke" {
   }
 }
 
-# https://registry.terraform.io/providers/hashicorp/kubernetes/latest/docs
-provider "kubernetes" {
-  host                   = "https://${module.gke.endpoint}"
-  token                  = data.google_client_config.default.access_token
-  cluster_ca_certificate = base64decode(module.gke.ca_certificate)
-}
-
 # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/artifact_registry_repository
 resource "google_artifact_registry_repository" "repository" {
   location      = data.google_client_config.default.region
@@ -166,8 +159,12 @@ resource "google_artifact_registry_repository" "repository" {
   }
 }
 
-# https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/dns_managed_zone
-resource "google_dns_managed_zone" "zone" {
-  name     = local.name
-  dns_name = "${local.name}.coilysiren.com."
+output "endpoint" {
+  value     = module.gke.endpoint
+  sensitive = true
+}
+
+output "ca_certificate" {
+  value     = module.gke.ca_certificate
+  sensitive = true
 }
