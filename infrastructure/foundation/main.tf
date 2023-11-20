@@ -1,5 +1,5 @@
 locals {
-  name = yamldecode(file("../config.yml")).name
+  name = yamldecode(file("../../config.yml")).name
 }
 
 # https://registry.terraform.io/providers/hashicorp/google/latest/docs/data-sources/client_config
@@ -159,9 +159,12 @@ resource "google_artifact_registry_repository" "repository" {
   }
 }
 
-# https://registry.terraform.io/providers/hashicorp/kubernetes/latest/docs
-provider "kubernetes" {
-  host                   = "https://${module.gke.endpoint}"
-  token                  = data.google_client_config.default.access_token
-  cluster_ca_certificate = base64decode(module.gke.ca_certificate)
+output "endpoint" {
+  value     = module.gke.endpoint
+  sensitive = true
+}
+
+output "ca_certificate" {
+  value     = module.gke.ca_certificate
+  sensitive = true
 }

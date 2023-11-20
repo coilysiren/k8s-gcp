@@ -17,6 +17,7 @@ class Context:
     version: str
     docker_repo: str
     python_version: str
+    kubeconfig = "./infrastructure/kubeconfig.yml"
 
     def __init__(self, ctx) -> None:
         self.invoke = ctx
@@ -60,6 +61,20 @@ class Context:
     def project(self) -> str:
         """get the project id"""
         return self.config["project"]
+
+    def get_kubeconfig(self) -> str:
+        with open(self.kubeconfig, "r", encoding="utf-8") as _file:
+            return yaml.safe_load(_file.read())
+
+    def update_image(self, kubeconfig: dict, image: str) -> dict:
+        for item in kubeconfig["items"]:
+            if item["kind"] == "Deployment":
+                item["spec"]["template"]["spec"]["containers"][0]["image"] = image
+        return kubeconfig
+
+    def write_kubeconfig(self, value: str) -> None:
+        with open(self.kubeconfig, "w", encoding="utf-8") as _file:
+            yaml.dump(value, _file)
 
     def _repo_name(self) -> str:
         """get the name of the repository"""
@@ -105,8 +120,9 @@ def deploy(ctx: [invoke.Context, Context]):
     # build docker, get the tag
     build(ctx.invoke)
 
-    # deploy and infrastructure changes
-    ctx.run("cd infrastructure && terraform apply")
+    # deploy foundational infrastructure
+    ctx.run("cd infrastructure/foundation && terraform init")
+    ctx.run("cd infrastructure/foundation && terraform apply")
 
     # set the project
     ctx.run(f"gcloud config set project {ctx.project}")
@@ -133,9 +149,14 @@ def deploy(ctx: [invoke.Context, Context]):
     ctx.run(f"docker push {ctx.docker_repo}:{ctx.version}")
 
     # deploy to k8s cluster
-    ctx.run(f"kubectl create deployment {ctx.name} --image={ctx.docker_repo}:{ctx.version}  --port=8080", warn=True)
-    ctx.run(f"kubectl set image deployment/{ctx.name} {ctx.name}={ctx.docker_repo}:{ctx.version}")
-    ctx.run(f"kubectl expose deployment {ctx.name} --type=LoadBalancer --port=80 --target-port=8080", warn=True)
+    kubeconfig = ctx.get_kubeconfig()
+    kubeconfig = ctx.update_image(kubeconfig, f"{ctx.docker_repo}:{ctx.version}")
+    ctx.write_kubeconfig(kubeconfig)
+    ctx.run(f"kubectl apply -f {ctx.kubeconfig}")
+
+    # deploy application infrastructure
+    ctx.run("cd infrastructure/application && terraform init")
+    ctx.run("cd infrastructure/application && terraform apply")
 
 
 @invoke.task
