@@ -66,10 +66,10 @@ class Context:
         with open(self.kubeconfig, "r", encoding="utf-8") as _file:
             return yaml.safe_load(_file.read())
 
-    def update_image(self, kubeconfig: dict) -> dict:
+    def update_image(self, kubeconfig: dict, image: str) -> dict:
         for item in kubeconfig["items"]:
             if item["kind"] == "Deployment":
-                item["spec"]["template"]["spec"]["containers"][0]["image"] = f"{self.docker_repo}:{self.version}"
+                item["spec"]["template"]["spec"]["containers"][0]["image"] = image
         return kubeconfig
 
     def write_kubeconfig(self, value: str) -> None:
@@ -150,7 +150,7 @@ def deploy(ctx: [invoke.Context, Context]):
 
     # deploy to k8s cluster
     kubeconfig = ctx.get_kubeconfig()
-    kubeconfig = ctx.update_image(kubeconfig)
+    kubeconfig = ctx.update_image(kubeconfig, f"{ctx.docker_repo}:{ctx.version}")
     ctx.write_kubeconfig(kubeconfig)
     ctx.run(f"kubectl apply -f {ctx.kubeconfig}")
 
