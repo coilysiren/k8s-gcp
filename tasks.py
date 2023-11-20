@@ -120,7 +120,7 @@ def deploy(ctx: [invoke.Context, Context]):
     # build docker, get the tag
     build(ctx.invoke)
 
-    # deploy and infrastructure changes
+    # deploy foundational infrastructure
     ctx.run("cd infrastructure/foundation && terraform init")
     ctx.run("cd infrastructure/foundation && terraform apply")
 
@@ -153,6 +153,10 @@ def deploy(ctx: [invoke.Context, Context]):
     kubeconfig = ctx.update_image(kubeconfig)
     ctx.write_kubeconfig(kubeconfig)
     ctx.run(f"kubectl apply -f {ctx.kubeconfig}")
+
+    # deploy application infrastructure
+    ctx.run("cd infrastructure/application && terraform init")
+    ctx.run("cd infrastructure/application && terraform apply")
 
 
 @invoke.task
