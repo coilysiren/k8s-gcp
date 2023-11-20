@@ -165,3 +165,9 @@ resource "google_artifact_registry_repository" "repository" {
     immutable_tags = true
   }
 }
+
+# https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/dns_managed_zone
+resource "google_dns_managed_zone" "zone" {
+  name     = local.name
+  dns_name = "${local.name}.coilysiren.com."
+}
