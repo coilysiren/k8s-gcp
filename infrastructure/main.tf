@@ -148,6 +148,13 @@ module "gke" {
   }
 }
 
+# https://registry.terraform.io/providers/hashicorp/kubernetes/latest/docs
+provider "kubernetes" {
+  host                   = "https://${module.gke.endpoint}"
+  token                  = data.google_client_config.default.access_token
+  cluster_ca_certificate = base64decode(module.gke.ca_certificate)
+}
+
 # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/artifact_registry_repository
 resource "google_artifact_registry_repository" "repository" {
   location      = data.google_client_config.default.region
@@ -157,11 +164,4 @@ resource "google_artifact_registry_repository" "repository" {
   docker_config {
     immutable_tags = true
   }
-}
-
-# https://registry.terraform.io/providers/hashicorp/kubernetes/latest/docs
-provider "kubernetes" {
-  host                   = "https://${module.gke.endpoint}"
-  token                  = data.google_client_config.default.access_token
-  cluster_ca_certificate = base64decode(module.gke.ca_certificate)
 }
