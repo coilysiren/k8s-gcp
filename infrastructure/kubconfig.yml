@@ -3,17 +3,22 @@ items:
   - apiVersion: networking.k8s.io/v1
     kind: Ingress
     metadata:
-      name: application
       annotations:
+        cert-manager.io/issuer: letsencrypt-staging
+        kubernetes.io/ingress.allow-http: 'true'
         kubernetes.io/ingress.class: gce
-        kubernetes.io/ingress.allow-http: "true"
+      name: application
     spec:
-      ingressClassName: gce
       defaultBackend:
         service:
           name: application
           port:
             number: 8080
+      ingressClassName: gce
+      tls:
+        - hosts:
+            - gke-test-2.coilysiren.me
+          secretName: tls-secret
   - apiVersion: cert-manager.io/v1
     kind: Issuer
     metadata:
@@ -65,10 +70,10 @@ items:
             app: application
         spec:
           containers:
-            - image: us-central1-docker.pkg.dev/root-territory-384205/repository/gke-test-2:scale-2c87fae-kai
+            - image: us-central1-docker.pkg.dev/root-territory-384205/repository/gke-test-2:certs-8ac23d2-kai
               name: application
               ports:
                 - containerPort: 8080
 kind: List
 metadata:
-  resourceVersion: ""
+  resourceVersion: ''

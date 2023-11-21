@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 
-import time
 import re
 
 import invoke
@@ -23,7 +22,6 @@ class Context:
     version: str
     docker_repo: str
     python_version: str
-    kubeconfig = "./infrastructure/kubeconfig.yml"
 
     def __init__(self, ctx) -> None:
         self.invoke = ctx
@@ -69,6 +67,11 @@ class Context:
         return self.config["email"]
 
     @property
+    def domain(self) -> str:
+        """get the domain"""
+        return self.config["domain"]
+
+    @property
     def cert_manager(self) -> str:
         """Format a full URL to a remote cert-manager.yaml file"""
         return (
@@ -81,8 +84,8 @@ class Context:
         """get the project id"""
         return self.config["project"]
 
-    def get_kubeconfig(self) -> str:
-        with open(self.kubeconfig, "r", encoding="utf-8") as _file:
+    def get_kubeconfig(self, kubeconfig) -> str:
+        with open(kubeconfig, "r", encoding="utf-8") as _file:
             return yaml.safe_load(_file.read())
 
     def update_image(self, kubeconfig: dict, image: str) -> dict:
@@ -97,8 +100,14 @@ class Context:
                 item["spec"]["acme"]["email"] = email
         return kubeconfig
 
-    def write_kubeconfig(self, value: str) -> None:
-        with open(self.kubeconfig, "w", encoding="utf-8") as _file:
+    def update_domain(self, kubeconfig: dict, domain: str) -> dict:
+        for item in kubeconfig["items"]:
+            if item["kind"] == "Ingress":
+                item["spec"]["tls"][0]["hosts"][0] = domain
+        return kubeconfig
+
+    def write_kubeconfig(self, kubeconfig, value: str) -> None:
+        with open(kubeconfig, "w", encoding="utf-8") as _file:
             yaml.dump(value, _file, Dumper=MyDumper, default_flow_style=False)
 
     def _repo_name(self) -> str:
@@ -134,6 +143,14 @@ def build(ctx: [invoke.Context, Context]):
 
     # build docker image
     ctx.run(f"BUILDKIT_PROGRESS=plain docker build --tag {ctx.name}:{ctx.version} . --target base")
+
+
+@invoke.task
+def deploy_cert_secret(ctx: [invoke.Context, Context]):
+    """deploy the tls secret to a kubernetes cluster, ONLY RUN THIS ONCE"""
+    # get local configurations
+    ctx = Context(ctx)
+    ctx.run("kubectl apply -f infrastructure/tls-secret.yml")
 
 
 @invoke.task
@@ -174,12 +191,13 @@ def deploy(ctx: [invoke.Context, Context]):
     ctx.run(f"docker push {ctx.docker_repo}:{ctx.version}")
 
     # deploy to k8s cluster
-    kubeconfig = ctx.get_kubeconfig()
+    kubeconfig = ctx.get_kubeconfig("infrastructure/kubconfig.yml")
     kubeconfig = ctx.update_image(kubeconfig, f"{ctx.docker_repo}:{ctx.version}")
     kubeconfig = ctx.update_email(kubeconfig, ctx.email)
-    ctx.write_kubeconfig(kubeconfig)
+    kubeconfig = ctx.update_domain(kubeconfig, ctx.domain)
+    ctx.write_kubeconfig("infrastructure/kubconfig.yml", kubeconfig)
+    ctx.run("kubectl apply -f infrastructure/kubconfig.yml")
     ctx.run(f"kubectl apply -f {ctx.cert_manager}")
-    ctx.run(f"kubectl apply -f {ctx.kubeconfig}")
 
     # deploy application infrastructure
     ctx.run("cd infrastructure/application && terraform init")
