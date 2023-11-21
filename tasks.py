@@ -8,6 +8,12 @@ import invoke
 import yaml
 
 
+# https://stackoverflow.com/questions/25108581/python-yaml-dump-bad-indentation
+class MyDumper(yaml.Dumper):
+    def increase_indent(self, flow=False, indentless=False):
+        return super(MyDumper, self).increase_indent(flow, False)
+
+
 class Context:
     """custom context class"""
 
@@ -58,6 +64,19 @@ class Context:
         return self.config["region"]
 
     @property
+    def email(self) -> str:
+        """get the email"""
+        return self.config["email"]
+
+    @property
+    def cert_manager(self) -> str:
+        """Format a full URL to a remote cert-manager.yaml file"""
+        return (
+            f"https://github.com/cert-manager/cert-manager/releases/download/"
+            f'{self.config["cert-manager-version"]}/cert-manager.yaml'
+        )
+
+    @property
     def project(self) -> str:
         """get the project id"""
         return self.config["project"]
@@ -72,9 +91,15 @@ class Context:
                 item["spec"]["template"]["spec"]["containers"][0]["image"] = image
         return kubeconfig
 
+    def update_email(self, kubeconfig: dict, email: str) -> dict:
+        for item in kubeconfig["items"]:
+            if item["kind"] == "Issuer":
+                item["spec"]["acme"]["email"] = email
+        return kubeconfig
+
     def write_kubeconfig(self, value: str) -> None:
         with open(self.kubeconfig, "w", encoding="utf-8") as _file:
-            yaml.dump(value, _file)
+            yaml.dump(value, _file, Dumper=MyDumper, default_flow_style=False)
 
     def _repo_name(self) -> str:
         """get the name of the repository"""
@@ -151,7 +176,9 @@ def deploy(ctx: [invoke.Context, Context]):
     # deploy to k8s cluster
     kubeconfig = ctx.get_kubeconfig()
     kubeconfig = ctx.update_image(kubeconfig, f"{ctx.docker_repo}:{ctx.version}")
+    kubeconfig = ctx.update_email(kubeconfig, ctx.email)
     ctx.write_kubeconfig(kubeconfig)
+    ctx.run(f"kubectl apply -f {ctx.cert_manager}")
     ctx.run(f"kubectl apply -f {ctx.kubeconfig}")
 
     # deploy application infrastructure
