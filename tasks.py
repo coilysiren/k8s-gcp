@@ -72,14 +72,6 @@ class Context:
         return self.config["domain"]
 
     @property
-    def cert_manager(self) -> str:
-        """Format a full URL to a remote cert-manager.yaml file"""
-        return (
-            f"https://github.com/cert-manager/cert-manager/releases/download/"
-            f'{self.config["cert-manager-version"]}/cert-manager.yaml'
-        )
-
-    @property
     def project(self) -> str:
         """get the project id"""
         return self.config["project"]
@@ -197,7 +189,6 @@ def deploy(ctx: [invoke.Context, Context]):
     kubeconfig = ctx.update_domain(kubeconfig, ctx.domain)
     ctx.write_kubeconfig("infrastructure/kubconfig.yml", kubeconfig)
     ctx.run("kubectl apply -f infrastructure/kubconfig.yml")
-    ctx.run(f"kubectl apply -f {ctx.cert_manager}")
 
     # deploy application infrastructure
     ctx.run("cd infrastructure/application && terraform init")

@@ -1,10 +1,12 @@
 # Personal configuration
 name: gke-test-2
 domain: gke-test-2.coilysiren.me
+zone: coilysiren.me
 email: coilysiren@gmail.com
 
 # Google Cloud Platform configuration
-project: root-territory-384205
+project: dotted-hope-405813
+statebucket: coilysiren-k8s-gpc-tfstate-3
 region: us-central1
 
 # https://github.com/cert-manager/cert-manager/releases

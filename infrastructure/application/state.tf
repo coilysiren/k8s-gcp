@@ -1,3 +1,7 @@
+locals {
+  statebucket = yamldecode(file("../../config.yml")).statebucket
+}
+
 terraform {
   backend "gcs" {
     bucket = "coilysiren-k8s-gpc-tfstate-0"
