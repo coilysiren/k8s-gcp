@@ -172,12 +172,12 @@ def deploy(ctx: [invoke.Context, Context]):
     ctx.run(f"docker push {ctx.docker_repo}:{ctx.version}")
 
     # deploy to k8s cluster
-    kubeconfig = ctx.get_kubeconfig("infrastructure/kubconfig.yml")
+    kubeconfig = ctx.get_kubeconfig("infrastructure/kubeconfig.yml")
     kubeconfig = ctx.update_image(kubeconfig, f"{ctx.docker_repo}:{ctx.version}")
     kubeconfig = ctx.update_email(kubeconfig, ctx.email)
     kubeconfig = ctx.update_domain(kubeconfig, ctx.domain)
-    ctx.write_kubeconfig("infrastructure/kubconfig.yml", kubeconfig)
-    ctx.run("kubectl apply -f infrastructure/kubconfig.yml")
+    ctx.write_kubeconfig("infrastructure/kubeconfig.yml", kubeconfig)
+    ctx.run("kubectl apply -f infrastructure/kubeconfig.yml")
 
     # deploy application infrastructure
     ctx.run("cd infrastructure/application && terraform init")
