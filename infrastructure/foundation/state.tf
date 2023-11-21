@@ -1,12 +1,12 @@
-locals {
-  statebucket = yamldecode(file("../../config.yml")).statebucket
-}
-
 terraform {
   backend "gcs" {
-    bucket = local.statebucket
+    bucket = "coilysiren-k8s-gpc-tfstate-3"
     prefix = "terraform/state"
   }
+}
+
+locals {
+  statebucket = yamldecode(file("../../config.yml")).statebucket
 }
 
 # https://registry.terraform.io/providers/hashicorp/google/latest/docs
@@ -24,7 +24,7 @@ data "google_project" "default" {}
 #
 # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/storage_bucket
 resource "google_storage_bucket" "default" {
-  name          = statebucket
+  name          = local.statebucket
   location      = "US"
   force_destroy = true
   project       = data.google_project.default.project_id

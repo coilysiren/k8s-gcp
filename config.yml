@@ -1,7 +1,7 @@
-# Personal configuration
-name: gke-test-2
-domain: gke-test-2.coilysiren.me
-zone: coilysiren.me
+# Project configuration
+name: gke-test-3
+domain: gke-test-3.coilysiren.me
+zone: coilysiren.me # domain - name = zone
 email: coilysiren@gmail.com
 
 # Google Cloud Platform configuration

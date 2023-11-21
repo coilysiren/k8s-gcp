@@ -4,7 +4,7 @@ items:
     kind: Ingress
     metadata:
       annotations:
-        kubernetes.io/ingress.allow-http: "true"
+        kubernetes.io/ingress.allow-http: 'true'
         kubernetes.io/ingress.class: gce
         networking.gke.io/managed-certificates: dns-cert
       name: application
@@ -17,7 +17,7 @@ items:
       ingressClassName: gce
       tls:
         - hosts:
-            - gke-test-2.coilysiren.me
+            - gke-test-3.coilysiren.me
   - apiVersion: v1
     kind: Service
     metadata:
@@ -55,10 +55,10 @@ items:
             app: application
         spec:
           containers:
-            - image: us-central1-docker.pkg.dev/root-territory-384205/repository/gke-test-2:certs-6bbf26e-kai
+            - image: us-central1-docker.pkg.dev/dotted-hope-405813/repository/gke-test-3:certs-59fae72-kai
               name: application
               ports:
                 - containerPort: 8080
 kind: List
 metadata:
-  resourceVersion: ""
+  resourceVersion: ''
