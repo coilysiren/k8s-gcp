@@ -138,14 +138,6 @@ def build(ctx: [invoke.Context, Context]):
 
 
 @invoke.task
-def deploy_cert_secret(ctx: [invoke.Context, Context]):
-    """deploy the tls secret to a kubernetes cluster, ONLY RUN THIS ONCE"""
-    # get local configurations
-    ctx = Context(ctx)
-    ctx.run("kubectl apply -f infrastructure/tls-secret.yml")
-
-
-@invoke.task
 def deploy(ctx: [invoke.Context, Context]):
     """deploy the application to a kubernetes cluster"""
     # get local configurations
@@ -157,9 +149,6 @@ def deploy(ctx: [invoke.Context, Context]):
     # deploy foundational infrastructure
     ctx.run("cd infrastructure/foundation && terraform init")
     ctx.run("cd infrastructure/foundation && terraform apply")
-
-    # set the project
-    ctx.run(f"gcloud config set project {ctx.project}")
 
     # authenticate with gcloud for docker registry
     ctx.run(

@@ -86,7 +86,7 @@ $ make upgrade
 
 ## Deployment
 
-This deployment command assumes you are locally authenticated to gcloud and kubectl, and have performed all of the above installations.
+This deployment command assumes you are locally installed to gcloud and kubectl, in addition to all the other above installations
 
 Note that, during the deploy process, you will likely need to enable several google APIs. Do so when prompted, then run the deploy again. This will show up as messages like:
 
@@ -105,6 +105,14 @@ Create a new project via https://console.cloud.google.com/, then set its name in
 ```yaml
 # config.yml
 project: dotted-hope-405813
+```
+
+Then you should run the following commands once, replacing $PROJECT with your actual project ID.
+
+```bash
+# $SHELL
+$ gcloud config set project $PROJECT
+$ gcloud auth application-default login --project $PROJECT
 ```
 
 ### 2. Create a terraform state bucket
@@ -133,9 +141,9 @@ Finally, import you import the bucket into terraform.
 
 ```bash
 # $SHELL
-cd infrastructure/foundation/
-terraform init
-terraform import google_storage_bucket.default coilysiren-k8s-gpc-tfstate-3
+$ cd infrastructure/foundation/
+$ terraform init
+$ terraform import google_storage_bucket.default coilysiren-k8s-gpc-tfstate-3
 ```
 
 Note that, when you deploy in the next step, you might have to modify the state bucket's region. The goal is to avoid replacing the state bucket.
@@ -146,6 +154,6 @@ Run the deploy script
 
 ```bash
 # $SHELL
-source ./venv/bin/activate
-invoke deploy # see tasks.py for source code
+$ source ./venv/bin/activate
+$ invoke deploy # see tasks.py for source code
 ```

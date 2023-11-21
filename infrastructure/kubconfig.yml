@@ -55,7 +55,7 @@ items:
             app: application
         spec:
           containers:
-            - image: us-central1-docker.pkg.dev/dotted-hope-405813/repository/gke-test-3:certs-59fae72-kai
+            - image: us-central1-docker.pkg.dev/dotted-hope-405813/repository/gke-test-3:certs-26d49e6-kai
               name: application
               ports:
                 - containerPort: 8080
