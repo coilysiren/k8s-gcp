@@ -43,6 +43,7 @@ resource "aws_iam_user_policy_attachment" "test-attach" {
   policy_arn = aws_iam_policy.policy.arn
 }
 
+# https://registry.terraform.io/providers/hashicorp/kubernetes/latest/docs/resources/secret
 resource "kubernetes_secret" "secret" {
   metadata {
     name = "route53-credentials-secret"
@@ -51,5 +52,17 @@ resource "kubernetes_secret" "secret" {
   data = {
     "access-key-id"     = aws_iam_access_key.key.id
     "secret-access-key" = aws_iam_access_key.key.secret
+  }
+}
+
+# https://registry.terraform.io/providers/hashicorp/kubernetes/latest/docs/resources/secret
+resource "kubernetes_secret" "cert" {
+  metadata {
+    name = "web-ssl"
+  }
+  type = "kubernetes.io/tls"
+  data = {
+    "tls.crt" = ""
+    "tls.key" = ""
   }
 }

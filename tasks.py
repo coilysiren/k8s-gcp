@@ -184,18 +184,18 @@ def deploy(ctx: [invoke.Context, Context]):
     # deploy to k8s cluster
     kubeconfig = ctx.get_kubeconfig("infrastructure/kubeconfig.yml")
     kubeconfig = ctx.update_image(kubeconfig, f"{ctx.docker_repo}:{ctx.version}")
-    kubeconfig = ctx.update_email(kubeconfig, ctx.email)
-    kubeconfig = ctx.update_domain(kubeconfig, ctx.domain)
     ctx.write_kubeconfig("infrastructure/kubeconfig.yml", kubeconfig)
     ctx.run("kubectl apply -f infrastructure/kubeconfig.yml")
 
     # deploy application infrastructure
-    ctx.run(f"kubectl apply -f {ctx.cert_manager_url}")
-    kubeconfig = ctx.get_kubeconfig("infrastructure/cert.yml")
-    kubeconfig = ctx.update_domain(kubeconfig, ctx.domain)
-    ctx.write_kubeconfig("infrastructure/cert.yml", kubeconfig)
     ctx.run("cd infrastructure/application && terraform init")
     ctx.run("cd infrastructure/application && terraform apply")
+    ctx.run(f"kubectl apply -f {ctx.cert_manager_url}")
+    kubeconfig = ctx.get_kubeconfig("infrastructure/cert.yml")
+    kubeconfig = ctx.update_email(kubeconfig, ctx.email)
+    kubeconfig = ctx.update_domain(kubeconfig, ctx.domain)
+    ctx.write_kubeconfig("infrastructure/cert.yml", kubeconfig)
+    ctx.run("kubectl apply -f infrastructure/cert.yml")
 
 
 @invoke.task
