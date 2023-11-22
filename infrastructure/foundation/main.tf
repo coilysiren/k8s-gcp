@@ -64,6 +64,28 @@ resource "google_project_iam_binding" "iamserviceAccountUser" {
   ]
 }
 
+# https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/google_project_iam
+# https://cloud.google.com/logging/docs/access-control
+resource "google_project_iam_binding" "logWriter" {
+  project = data.google_client_config.default.project
+  role    = "roles/logging.logWriter"
+
+  members = [
+    "serviceAccount:${data.google_project.default.number}@cloudservices.gserviceaccount.com",
+  ]
+}
+
+# https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/google_project_iam
+# https://cloud.google.com/monitoring/access-control
+resource "google_project_iam_binding" "metricWriter" {
+  project = data.google_client_config.default.project
+  role    = "roles/monitoring.metricWriter"
+
+  members = [
+    "serviceAccount:${data.google_project.default.number}@cloudservices.gserviceaccount.com",
+  ]
+}
+
 # https://registry.terraform.io/modules/terraform-google-modules/network/google/latest
 module "vpc" {
   source       = "terraform-google-modules/network/google"

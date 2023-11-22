@@ -1,0 +1,25 @@
+apiVersion: v1
+items:
+  # https://cert-manager.io/docs/configuration/acme/dns01/route53/
+  # https://cert-manager.io/docs/reference/api-docs/#cert-manager.io/v1.ClusterIssuer
+  - apiVersion: cert-manager.io/v1
+    kind: ClusterIssuer
+    metadata:
+      name: letsencrypt-staging
+    spec:
+      acme:
+        solvers:
+          - selector:
+              dnsZones:
+                - gke-test-3.coilysiren.me
+            dns01:
+              route53:
+                accessKeyIDSecretRef:
+                  name: route53-credentials-secret
+                  key: access-key-id
+                secretAccessKeySecretRef:
+                  name: route53-credentials-secret
+                  key: secret-access-key
+kind: List
+metadata:
+  resourceVersion: ""

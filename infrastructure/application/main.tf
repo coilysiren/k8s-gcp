@@ -32,26 +32,3 @@ resource "aws_route53_record" "record" {
   ttl     = "300"
   records = [data.kubernetes_service.service.status.0.load_balancer.0.ingress.0.ip]
 }
-
-# https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/route53_record
-resource "aws_route53_record" "cert" {
-  zone_id = data.aws_route53_zone.zone.zone_id
-  name    = google_certificate_manager_dns_authorization.default.dns_resource_record.0.name
-  type    = google_certificate_manager_dns_authorization.default.dns_resource_record.0.type
-  ttl     = "300"
-  records = [google_certificate_manager_dns_authorization.default.dns_resource_record.0.data]
-}
-
-# https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/certificate_manager_certificate
-resource "google_certificate_manager_certificate" "default" {
-  name  = "dns-cert"
-  scope = "ALL_REGIONS"
-  managed {
-    domains = [
-      google_certificate_manager_dns_authorization.default.domain,
-    ]
-    dns_authorizations = [
-      google_certificate_manager_dns_authorization.default.id,
-    ]
-  }
-}

@@ -76,6 +76,14 @@ class Context:
         """get the project id"""
         return self.config["project"]
 
+    @property
+    def cert_manager_url(self) -> str:
+        """get the cert-manager url"""
+        return (
+            "https://github.com/cert-manager/cert-manager/releases/download/"
+            f'{self.config["cert-manager-version"]}/cert-manager.yaml'
+        )
+
     def get_kubeconfig(self, kubeconfig) -> str:
         with open(kubeconfig, "r", encoding="utf-8") as _file:
             return yaml.safe_load(_file.read())
@@ -96,6 +104,8 @@ class Context:
         for item in kubeconfig["items"]:
             if item["kind"] == "Ingress":
                 item["spec"]["tls"][0]["hosts"][0] = domain
+            if item["kind"] == "ClusterIssuer":
+                item["spec"]["acme"]["solvers"][0]["selector"]["dnsZones"][0] = domain
         return kubeconfig
 
     def write_kubeconfig(self, kubeconfig, value: str) -> None:
@@ -180,6 +190,10 @@ def deploy(ctx: [invoke.Context, Context]):
     ctx.run("kubectl apply -f infrastructure/kubeconfig.yml")
 
     # deploy application infrastructure
+    ctx.run(f"kubectl apply -f {ctx.cert_manager_url}")
+    kubeconfig = ctx.get_kubeconfig("infrastructure/cert.yml")
+    kubeconfig = ctx.update_domain(kubeconfig, ctx.domain)
+    ctx.write_kubeconfig("infrastructure/cert.yml", kubeconfig)
     ctx.run("cd infrastructure/application && terraform init")
     ctx.run("cd infrastructure/application && terraform apply")
 
