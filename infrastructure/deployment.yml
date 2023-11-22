@@ -1,0 +1,38 @@
+apiVersion: v1
+items:
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      annotations:
+        cloud.google.com/neg: '{"ingress": true}'
+      name: application
+    spec:
+      ports:
+        - name: http
+          port: 80
+          targetPort: 8080
+      selector:
+        app: application
+      type: ClusterIP
+  - apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: application
+    spec:
+      replicas: 1
+      selector:
+        matchLabels:
+          app: application
+      template:
+        metadata:
+          labels:
+            app: application
+        spec:
+          containers:
+            - image: us-central1-docker.pkg.dev/dotted-hope-405813/repository/gke-test-3:certs-add8cea-kai
+              name: application
+              ports:
+                - containerPort: 8080
+kind: List
+metadata:
+  resourceVersion: ""

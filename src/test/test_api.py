@@ -11,6 +11,12 @@ def test_true():
     assert True
 
 
+def test_healthcheck_root():
+    response = client.get("/")
+    assert response.status_code == 200
+    assert response.json == {"status": "ok"}
+
+
 def test_healthcheck():
     response = client.get("/api/healthcheck")
     assert response.status_code == 200

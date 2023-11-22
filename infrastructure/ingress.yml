@@ -1,0 +1,50 @@
+apiVersion: v1
+items:
+  - apiVersion: networking.k8s.io/v1
+    kind: Ingress
+    metadata:
+      annotations:
+        cert-manager.io/issuer: letsencrypt-prod
+        kubernetes.io/ingress.allow-http: true
+        kubernetes.io/ingress.class: gce
+        kubernetes.io/ingress.global-static-ip-name: application-ingress
+      name: application-ingress
+    spec:
+      defaultBackend:
+        service:
+          name: application
+          port:
+            number: 80
+      tls:
+        - hosts:
+            - gke-test-3.coilysiren.me
+          secretName: web-ssl
+  - apiVersion: cert-manager.io/v1
+    kind: Issuer
+    metadata:
+      name: letsencrypt-prod
+    spec:
+      acme:
+        email: coilysiren@gmail.com
+        privateKeySecretRef:
+          name: letsencrypt-prod
+        server: https://acme-v02.api.letsencrypt.org/directory
+        solvers:
+          - http01:
+              ingress:
+                name: application-ingress
+          - dns01:
+              route53:
+                accessKeyIDSecretRef:
+                  key: access-key-id
+                  name: route53-credentials-secret
+                region: us-east-1
+                secretAccessKeySecretRef:
+                  key: secret-access-key
+                  name: route53-credentials-secret
+            selector:
+              dnsZones:
+                - gke-test-3.coilysiren.me
+kind: List
+metadata:
+  resourceVersion: ""

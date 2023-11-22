@@ -2,9 +2,6 @@ locals {
   name = yamldecode(file("../../config.yml")).name
 }
 
-# https://registry.terraform.io/providers/hashicorp/google/latest/docs/data-sources/client_config
-data "google_client_config" "default" {}
-
 # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/google_service_account
 resource "google_service_account" "gke" {
   account_id = local.name
@@ -64,6 +61,28 @@ resource "google_project_iam_binding" "iamserviceAccountUser" {
   ]
 }
 
+# https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/google_project_iam
+# https://cloud.google.com/logging/docs/access-control
+resource "google_project_iam_binding" "logWriter" {
+  project = data.google_client_config.default.project
+  role    = "roles/logging.logWriter"
+
+  members = [
+    "serviceAccount:${data.google_project.default.number}@cloudservices.gserviceaccount.com",
+  ]
+}
+
+# https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/google_project_iam
+# https://cloud.google.com/monitoring/access-control
+resource "google_project_iam_binding" "metricWriter" {
+  project = data.google_client_config.default.project
+  role    = "roles/monitoring.metricWriter"
+
+  members = [
+    "serviceAccount:${data.google_project.default.number}@cloudservices.gserviceaccount.com",
+  ]
+}
+
 # https://registry.terraform.io/modules/terraform-google-modules/network/google/latest
 module "vpc" {
   source       = "terraform-google-modules/network/google"
@@ -111,19 +130,18 @@ module "vpc" {
 
 # https://registry.terraform.io/modules/terraform-google-modules/kubernetes-engine/google/latest
 module "gke" {
-  name                      = local.name
-  source                    = "terraform-google-modules/kubernetes-engine/google"
-  project_id                = data.google_client_config.default.project
-  region                    = data.google_client_config.default.region
-  network                   = module.vpc.network_name
-  subnetwork                = module.vpc.subnets_names[0]
-  zones                     = ["${data.google_client_config.default.region}-a"] # default is every zone, we only want one for $$$ reasons
-  remove_default_node_pool  = true
-  deletion_protection       = false
-  default_max_pods_per_node = 16
-  initial_node_count        = 1
-  ip_range_pods             = "pods-range"
-  ip_range_services         = "services-range"
+  name                     = local.name
+  source                   = "terraform-google-modules/kubernetes-engine/google"
+  project_id               = data.google_client_config.default.project
+  region                   = data.google_client_config.default.region
+  network                  = module.vpc.network_name
+  subnetwork               = module.vpc.subnets_names[0]
+  zones                    = ["${data.google_client_config.default.region}-a"] # default is every zone, we only want one for $$$ reasons
+  remove_default_node_pool = true
+  deletion_protection      = false
+  initial_node_count       = 1
+  ip_range_pods            = "pods-range"
+  ip_range_services        = "services-range"
   # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/container_node_pool
   # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/container_cluster#nested_node_config
   node_pools = [

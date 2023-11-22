@@ -1,11 +1,16 @@
 #!/usr/bin/env python3
 
 
-import time
 import re
 
 import invoke
 import yaml
+
+
+# https://stackoverflow.com/questions/25108581/python-yaml-dump-bad-indentation
+class MyDumper(yaml.Dumper):
+    def increase_indent(self, flow=False, indentless=False):
+        return super(MyDumper, self).increase_indent(flow, False)
 
 
 class Context:
@@ -17,7 +22,6 @@ class Context:
     version: str
     docker_repo: str
     python_version: str
-    kubeconfig = "./infrastructure/kubeconfig.yml"
 
     def __init__(self, ctx) -> None:
         self.invoke = ctx
@@ -58,12 +62,30 @@ class Context:
         return self.config["region"]
 
     @property
+    def email(self) -> str:
+        """get the email"""
+        return self.config["email"]
+
+    @property
+    def domain(self) -> str:
+        """get the domain"""
+        return self.config["domain"]
+
+    @property
     def project(self) -> str:
         """get the project id"""
         return self.config["project"]
 
-    def get_kubeconfig(self) -> str:
-        with open(self.kubeconfig, "r", encoding="utf-8") as _file:
+    @property
+    def cert_manager_url(self) -> str:
+        """get the cert-manager url"""
+        return (
+            "https://github.com/cert-manager/cert-manager/releases/download/"
+            f'{self.config["cert-manager-version"]}/cert-manager.yaml'
+        )
+
+    def get_kubeconfig(self, kubeconfig) -> str:
+        with open(kubeconfig, "r", encoding="utf-8") as _file:
             return yaml.safe_load(_file.read())
 
     def update_image(self, kubeconfig: dict, image: str) -> dict:
@@ -72,9 +94,23 @@ class Context:
                 item["spec"]["template"]["spec"]["containers"][0]["image"] = image
         return kubeconfig
 
-    def write_kubeconfig(self, value: str) -> None:
-        with open(self.kubeconfig, "w", encoding="utf-8") as _file:
-            yaml.dump(value, _file)
+    def update_email(self, kubeconfig: dict, email: str) -> dict:
+        for item in kubeconfig["items"]:
+            if item["kind"] == "Issuer":
+                item["spec"]["acme"]["email"] = email
+        return kubeconfig
+
+    def update_domain(self, kubeconfig: dict, domain: str) -> dict:
+        for item in kubeconfig["items"]:
+            if item["kind"] == "Ingress":
+                item["spec"]["tls"][0]["hosts"][0] = domain
+            if item["kind"] == "ClusterIssuer":
+                item["spec"]["acme"]["solvers"][0]["selector"]["dnsZones"][0] = domain
+        return kubeconfig
+
+    def write_kubeconfig(self, kubeconfig, value: str) -> None:
+        with open(kubeconfig, "w", encoding="utf-8") as _file:
+            yaml.dump(value, _file, Dumper=MyDumper, default_flow_style=False)
 
     def _repo_name(self) -> str:
         """get the name of the repository"""
@@ -124,9 +160,6 @@ def deploy(ctx: [invoke.Context, Context]):
     ctx.run("cd infrastructure/foundation && terraform init")
     ctx.run("cd infrastructure/foundation && terraform apply")
 
-    # set the project
-    ctx.run(f"gcloud config set project {ctx.project}")
-
     # authenticate with gcloud for docker registry
     ctx.run(
         ctx.compress(
@@ -149,14 +182,26 @@ def deploy(ctx: [invoke.Context, Context]):
     ctx.run(f"docker push {ctx.docker_repo}:{ctx.version}")
 
     # deploy to k8s cluster
-    kubeconfig = ctx.get_kubeconfig()
+    kubeconfig = ctx.get_kubeconfig("infrastructure/deployment.yml")
     kubeconfig = ctx.update_image(kubeconfig, f"{ctx.docker_repo}:{ctx.version}")
-    ctx.write_kubeconfig(kubeconfig)
-    ctx.run(f"kubectl apply -f {ctx.kubeconfig}")
+    ctx.write_kubeconfig("infrastructure/deployment.yml", kubeconfig)
+    ctx.run("kubectl apply -f infrastructure/deployment.yml")
 
     # deploy application infrastructure
     ctx.run("cd infrastructure/application && terraform init")
     ctx.run("cd infrastructure/application && terraform apply")
+    ctx.run(f"kubectl apply -f {ctx.cert_manager_url}")
+
+    # deploy ingress
+    kubeconfig = ctx.get_kubeconfig("infrastructure/ingress.yml")
+    kubeconfig = ctx.update_email(kubeconfig, ctx.email)
+    kubeconfig = ctx.update_domain(kubeconfig, ctx.domain)
+    ctx.write_kubeconfig("infrastructure/ingress.yml", kubeconfig)
+    ctx.run("kubectl apply -f infrastructure/ingress.yml")
+
+    # deploy the ingress DNS (eg. the domain name)
+    ctx.run("cd infrastructure/ingress && terraform init")
+    ctx.run("cd infrastructure/ingress && terraform apply")
 
 
 @invoke.task

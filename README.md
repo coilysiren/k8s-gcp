@@ -86,9 +86,74 @@ $ make upgrade
 
 ## Deployment
 
-This deployment command assumes you are locally authenticated to both gcloud and kubectl. Directions on how to do so are out of scope for this documentation. Please consult your team's local deployment tooling and instructions!
+This deployment command assumes you are locally installed to gcloud and kubectl, in addition to all the other above installations
+
+Note that, during the deploy process, you will likely need to enable several google APIs. Do so when prompted, then run the deploy again. This will show up as messages like:
+
+> googleapi: Error 403: $API has not been used in project $PROECT before or it is disabled. Enable it by visiting...
+
+These instructions all assume you are starting from the top level directory, whenever a `$SHELL` command is given.
+
+### 0. Name your project
+
+Open `config.yml` and modify the "Project configuration" section
+
+### 1. Create a new project
+
+Create a new project via https://console.cloud.google.com/, then set its name in `config.yml`
+
+```yaml
+# config.yml
+project: dotted-hope-405813
+```
+
+Then you should run the following commands once, replacing $PROJECT with your actual project ID.
 
 ```bash
-source ./venv/bin/activate
-invoke deploy # see tasks.py for source code
+# $SHELL
+$ gcloud config set project $PROJECT
+$ gcloud auth application-default login --project $PROJECT
+```
+
+### 2. Create a terraform state bucket
+
+Create a terraform state bucket via https://console.cloud.google.com/, then set its name in `config.yml`
+
+```yaml
+# config.yml
+bucket: coilysiren-k8s-gpc-tfstate-3
+```
+
+Then you must set its name manually in every `state.tf` file. Open every `state.tf` file in the repo. You will see a block like this:
+
+```hcl
+terraform {
+  backend "gcs" {
+    bucket = "coilysiren-k8s-gpc-tfstate-3"
+    prefix = "terraform/state"
+  }
+}
+```
+
+You should modify the `bucket = ...` line with your bucket name, same as in `config.yml`.
+
+Finally, import you import the bucket into terraform.
+
+```bash
+# $SHELL
+$ cd infrastructure/foundation/
+$ terraform init
+$ terraform import google_storage_bucket.default coilysiren-k8s-gpc-tfstate-3
+```
+
+Note that, when you deploy in the next step, you might have to modify the state bucket's region. The goal is to avoid replacing the state bucket.
+
+### 3. Deploy
+
+Run the deploy script
+
+```bash
+# $SHELL
+$ source ./venv/bin/activate
+$ invoke deploy # see tasks.py for source code
 ```

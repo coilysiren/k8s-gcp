@@ -1,8 +1,12 @@
 terraform {
   backend "gcs" {
-    bucket = "coilysiren-k8s-gpc-tfstate-0"
+    bucket = "coilysiren-k8s-gpc-tfstate-3"
     prefix = "terraform/state"
   }
+}
+
+locals {
+  statebucket = yamldecode(file("../../config.yml")).statebucket
 }
 
 # https://registry.terraform.io/providers/hashicorp/google/latest/docs
@@ -10,6 +14,9 @@ provider "google" {
   project = yamldecode(file("../../config.yml")).project
   region  = yamldecode(file("../../config.yml")).region
 }
+
+# https://registry.terraform.io/providers/hashicorp/google/latest/docs/data-sources/client_config
+data "google_client_config" "default" {}
 
 # https://registry.terraform.io/providers/hashicorp/google/latest/docs/data-sources/project
 data "google_project" "default" {}
@@ -20,7 +27,7 @@ data "google_project" "default" {}
 #
 # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/storage_bucket
 resource "google_storage_bucket" "default" {
-  name          = "coilysiren-k8s-gpc-tfstate-0"
+  name          = local.statebucket
   location      = "US"
   force_destroy = true
   project       = data.google_project.default.project_id

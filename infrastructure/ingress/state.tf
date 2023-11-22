@@ -1,7 +1,7 @@
 terraform {
   backend "gcs" {
     bucket = "coilysiren-k8s-gpc-tfstate-3"
-    prefix = "terraform/state/application"
+    prefix = "terraform/state/ingress"
   }
 }
 
