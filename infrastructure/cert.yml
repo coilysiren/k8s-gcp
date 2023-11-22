@@ -30,6 +30,9 @@ items:
           name: letsencrypt-staging
         server: https://acme-staging-v02.api.letsencrypt.org/directory
         solvers:
+          - http01:
+              ingress:
+                name: application-ingress
           - dns01:
               route53:
                 accessKeyIDSecretRef:

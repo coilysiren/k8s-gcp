@@ -197,6 +197,10 @@ def deploy(ctx: [invoke.Context, Context]):
     ctx.write_kubeconfig("infrastructure/cert.yml", kubeconfig)
     ctx.run("kubectl apply -f infrastructure/cert.yml")
 
+    # deploy the final ingress (eg. domain name)
+    ctx.run("cd infrastructure/ingress && terraform init")
+    ctx.run("cd infrastructure/ingress && terraform apply")
+
 
 @invoke.task
 def flask(ctx: [invoke.Context, Context]):

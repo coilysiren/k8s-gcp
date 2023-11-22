@@ -15,6 +15,9 @@ provider "google" {
   region  = yamldecode(file("../../config.yml")).region
 }
 
+# https://registry.terraform.io/providers/hashicorp/google/latest/docs/data-sources/client_config
+data "google_client_config" "default" {}
+
 # https://registry.terraform.io/providers/hashicorp/google/latest/docs/data-sources/project
 data "google_project" "default" {}
 
