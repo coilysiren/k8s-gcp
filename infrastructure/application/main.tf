@@ -80,3 +80,9 @@ data "aws_route53_zone" "zone" {
   name         = "${local.zone}."
   private_zone = false
 }
+
+# https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_address
+resource "google_compute_address" "address" {
+  name         = "application-ingress"
+  address_type = "EXTERNAL"
+}

@@ -182,22 +182,24 @@ def deploy(ctx: [invoke.Context, Context]):
     ctx.run(f"docker push {ctx.docker_repo}:{ctx.version}")
 
     # deploy to k8s cluster
-    kubeconfig = ctx.get_kubeconfig("infrastructure/kubeconfig.yml")
+    kubeconfig = ctx.get_kubeconfig("infrastructure/deployment.yml")
     kubeconfig = ctx.update_image(kubeconfig, f"{ctx.docker_repo}:{ctx.version}")
-    ctx.write_kubeconfig("infrastructure/kubeconfig.yml", kubeconfig)
-    ctx.run("kubectl apply -f infrastructure/kubeconfig.yml")
+    ctx.write_kubeconfig("infrastructure/deployment.yml", kubeconfig)
+    ctx.run("kubectl apply -f infrastructure/deployment.yml")
 
     # deploy application infrastructure
     ctx.run("cd infrastructure/application && terraform init")
     ctx.run("cd infrastructure/application && terraform apply")
     ctx.run(f"kubectl apply -f {ctx.cert_manager_url}")
-    kubeconfig = ctx.get_kubeconfig("infrastructure/cert.yml")
+
+    # deploy ingress
+    kubeconfig = ctx.get_kubeconfig("infrastructure/ingress.yml")
     kubeconfig = ctx.update_email(kubeconfig, ctx.email)
     kubeconfig = ctx.update_domain(kubeconfig, ctx.domain)
-    ctx.write_kubeconfig("infrastructure/cert.yml", kubeconfig)
-    ctx.run("kubectl apply -f infrastructure/cert.yml")
+    ctx.write_kubeconfig("infrastructure/ingress.yml", kubeconfig)
+    ctx.run("kubectl apply -f infrastructure/ingress.yml")
 
-    # deploy the final ingress (eg. domain name)
+    # deploy the ingress DNS (eg. the domain name)
     ctx.run("cd infrastructure/ingress && terraform init")
     ctx.run("cd infrastructure/ingress && terraform apply")
 

@@ -4,9 +4,10 @@ items:
     kind: Ingress
     metadata:
       annotations:
-        cert-manager.io/issuer: letsencrypt-staging
+        cert-manager.io/issuer: letsencrypt-prod
         kubernetes.io/ingress.allow-http: true
         kubernetes.io/ingress.class: gce
+        kubernetes.io/ingress.global-static-ip-name: application-ingress
       name: application-ingress
     spec:
       defaultBackend:
@@ -14,7 +15,6 @@ items:
           name: application
           port:
             number: 80
-      ingressClassName: gce
       tls:
         - hosts:
             - gke-test-3.coilysiren.me
@@ -22,13 +22,13 @@ items:
   - apiVersion: cert-manager.io/v1
     kind: Issuer
     metadata:
-      name: letsencrypt-staging
+      name: letsencrypt-prod
     spec:
       acme:
         email: coilysiren@gmail.com
         privateKeySecretRef:
-          name: letsencrypt-staging
-        server: https://acme-staging-v02.api.letsencrypt.org/directory
+          name: letsencrypt-prod
+        server: https://acme-v02.api.letsencrypt.org/directory
         solvers:
           - http01:
               ingress:
@@ -47,4 +47,4 @@ items:
                 - gke-test-3.coilysiren.me
 kind: List
 metadata:
-  resourceVersion: ''
+  resourceVersion: ""
