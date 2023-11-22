@@ -65,4 +65,9 @@ resource "kubernetes_secret" "cert" {
     "tls.crt" = ""
     "tls.key" = ""
   }
+  lifecycle {
+    ignore_changes = [
+      metadata,
+    ]
+  }
 }

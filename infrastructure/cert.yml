@@ -5,7 +5,7 @@ items:
     metadata:
       annotations:
         cert-manager.io/issuer: letsencrypt-staging
-        kubernetes.io/ingress.allow-http: "true"
+        kubernetes.io/ingress.allow-http: true
         kubernetes.io/ingress.class: gce
       name: application-ingress
     spec:
@@ -44,4 +44,4 @@ items:
                 - gke-test-3.coilysiren.me
 kind: List
 metadata:
-  resourceVersion: ""
+  resourceVersion: ''
