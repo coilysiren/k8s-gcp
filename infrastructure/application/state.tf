@@ -29,7 +29,8 @@ provider "kubernetes" {
 provider "aws" {
   # AWS doesn't have the same regions as GCP, and also doesn't format then in the same way.
   # That said, this isn't a huge issue because we are only using AWS for DNS.
-  region = "us-east-1"
+  region  = "us-east-1"
+  profile = "coilysiren"
 }
 
 data "terraform_remote_state" "foundation" {

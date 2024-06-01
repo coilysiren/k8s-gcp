@@ -144,7 +144,7 @@ def build(ctx: [invoke.Context, Context]):
     ctx = Context(ctx)
 
     # build docker image
-    ctx.run(f"BUILDKIT_PROGRESS=plain docker build --tag {ctx.name}:{ctx.version} . --target base")
+    ctx.run(f"BUILDKIT_PROGRESS=plain docker build --platform linux/amd64 --tag {ctx.name}:{ctx.version} . --target base")
 
 
 @invoke.task

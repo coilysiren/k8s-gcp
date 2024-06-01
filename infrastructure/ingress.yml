@@ -17,7 +17,7 @@ items:
             number: 80
       tls:
         - hosts:
-            - gke-test-3.coilysiren.me
+            - gke-test-5.coilysiren.me
           secretName: web-ssl
   - apiVersion: cert-manager.io/v1
     kind: Issuer
@@ -47,4 +47,4 @@ items:
                 - gke-test-3.coilysiren.me
 kind: List
 metadata:
-  resourceVersion: ""
+  resourceVersion: ''

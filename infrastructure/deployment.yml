@@ -29,10 +29,14 @@ items:
             app: application
         spec:
           containers:
-            - image: us-central1-docker.pkg.dev/dotted-hope-405813/repository/gke-test-3:certs-add8cea-kai
+            - image: us-central1-docker.pkg.dev/gke-test-5/repository/gke-test-5:main-27e69ef-kai
               name: application
               ports:
                 - containerPort: 8080
+              resources:
+                requests:
+                  cpu: "0.1"
+                  memory: 256Mi
 kind: List
 metadata:
   resourceVersion: ""

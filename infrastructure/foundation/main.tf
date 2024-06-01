@@ -147,7 +147,7 @@ module "gke" {
   node_pools = [
     {
       name            = "primary"
-      machine_type    = "e2-small"
+      machine_type    = "e2-medium"
       min_count       = 1
       max_count       = 1
       auto_repair     = true
