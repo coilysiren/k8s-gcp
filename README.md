@@ -121,7 +121,7 @@ Create a terraform state bucket via https://console.cloud.google.com/, then set 
 
 ```yaml
 # config.yml
-bucket: coilysiren-k8s-gpc-tfstate-3
+bucket: coilysiren-k8s-gpc-tfstate-5
 ```
 
 Then you must set its name manually in every `state.tf` file. Open every `state.tf` file in the repo. You will see a block like this:
@@ -129,7 +129,7 @@ Then you must set its name manually in every `state.tf` file. Open every `state.
 ```hcl
 terraform {
   backend "gcs" {
-    bucket = "coilysiren-k8s-gpc-tfstate-3"
+    bucket = "coilysiren-k8s-gpc-tfstate-5"
     prefix = "terraform/state"
   }
 }
@@ -143,7 +143,7 @@ Finally, import you import the bucket into terraform.
 # $SHELL
 $ cd infrastructure/foundation/
 $ terraform init
-$ terraform import google_storage_bucket.default coilysiren-k8s-gpc-tfstate-3
+$ terraform import google_storage_bucket.default coilysiren-k8s-gpc-tfstate-5
 ```
 
 Note that, when you deploy in the next step, you might have to modify the state bucket's region. The goal is to avoid replacing the state bucket.
