@@ -1,6 +1,6 @@
 terraform {
   backend "gcs" {
-    bucket = "coilysiren-k8s-gpc-tfstate-3"
+    bucket = "coilysiren-k8s-gpc-tfstate-5"
     prefix = "terraform/state"
   }
 }
