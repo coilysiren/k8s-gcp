@@ -5,8 +5,6 @@ items:
     metadata:
       annotations:
         cert-manager.io/issuer: letsencrypt-prod
-        kubernetes.io/ingress.allow-http: true
-        kubernetes.io/ingress.class: gce
         kubernetes.io/ingress.global-static-ip-name: application-ingress
       name: application-ingress
     spec:
@@ -44,7 +42,7 @@ items:
                   name: route53-credentials-secret
             selector:
               dnsZones:
-                - gke-test-3.coilysiren.me
+                - gke-test-5.coilysiren.me
 kind: List
 metadata:
-  resourceVersion: ''
+  resourceVersion: ""

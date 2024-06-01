@@ -3,17 +3,15 @@ items:
   - apiVersion: v1
     kind: Service
     metadata:
-      annotations:
-        cloud.google.com/neg: '{"ingress": true}'
       name: application
     spec:
       ports:
-        - name: http
-          port: 80
+        - port: 80
           targetPort: 8080
+          protocol: TCP
       selector:
         app: application
-      type: ClusterIP
+      type: NodePort
   - apiVersion: apps/v1
     kind: Deployment
     metadata:
@@ -29,7 +27,7 @@ items:
             app: application
         spec:
           containers:
-            - image: us-central1-docker.pkg.dev/gke-test-5/repository/gke-test-5:main-27e69ef-kai
+            - image: us-central1-docker.pkg.dev/gke-test-5/repository/gke-test-5:main-8d0f72c-kai
               name: application
               ports:
                 - containerPort: 8080

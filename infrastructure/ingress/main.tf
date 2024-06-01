@@ -3,11 +3,8 @@ locals {
   domain = yamldecode(file("../../config.yml")).domain
 }
 
-# https://registry.terraform.io/providers/hashicorp/kubernetes/latest/docs/data-sources/ingress_v1
-data "kubernetes_ingress_v1" "ingress" {
-  metadata {
-    name = "application-ingress"
-  }
+data "google_compute_addresses" "address" {
+  filter = "name:application-ingress"
 }
 
 # https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/route53_zone
@@ -22,5 +19,5 @@ resource "aws_route53_record" "record" {
   name    = "${local.domain}."
   type    = "A"
   ttl     = "300"
-  records = [data.kubernetes_ingress_v1.ingress.status.0.load_balancer.0.ingress.0.ip]
+  records = [data.google_compute_addresses.address.addresses[0].address]
 }
