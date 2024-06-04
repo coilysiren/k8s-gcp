@@ -1,5 +1,17 @@
 apiVersion: v1
 items:
+  - apiVersion: networking.k8s.io/v1
+    kind: Ingress
+    metadata:
+      annotations:
+        kubernetes.io/ingress.global-static-ip-name: application-ingress
+      name: application-ingress
+    spec:
+      defaultBackend:
+        service:
+          name: application
+          port:
+            number: 80
   - apiVersion: v1
     kind: Service
     metadata:
@@ -7,8 +19,8 @@ items:
     spec:
       ports:
         - port: 80
-          targetPort: 8080
           protocol: TCP
+          targetPort: 8080
       selector:
         app: application
       type: NodePort
@@ -27,13 +39,13 @@ items:
             app: application
         spec:
           containers:
-            - image: us-central1-docker.pkg.dev/gke-test-5/repository/gke-test-5:main-8d0f72c-kai
+            - image: us-central1-docker.pkg.dev/gke-test-5/repository/gke-test-5:gkeautopilot-af05c22-kai
               name: application
               ports:
                 - containerPort: 8080
               resources:
                 requests:
-                  cpu: "0.1"
+                  cpu: "0.2"
                   memory: 256Mi
 kind: List
 metadata:

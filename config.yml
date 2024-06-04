@@ -1,6 +1,6 @@
 # Project configuration
 name: gke-test-5
-domain: gke-test-5.coilysiren.me
+domain: api.coilysiren.me
 zone: coilysiren.me # domain - name = zone
 email: coilysiren@gmail.com
 
@@ -9,5 +9,8 @@ project: gke-test-5
 statebucket: coilysiren-k8s-gpc-tfstate-5
 region: us-central1
 
-# https://github.com/cert-manager/cert-manager/releases
-cert-manager-version: v1.14.5
+# AWS Configuration
+# AWS doesn't have the same regions as GCP, and also doesn't format then in the same way.
+# That said, this isn't a huge issue because we are only using AWS for DNS.
+aws-region: us-east-1
+aws-profile: coilysiren
